@@ -9,13 +9,13 @@ logger.setLevel(logging.INFO)
 # Два необязательных параметра:
 # block_rows - сколько максимально строк из DataFrame писать в один блок.
 # logs - передать экземпляр логгера для логирования событий.
-nt = NativeTransfer(block_rows=65_536, logs=logger)
+nt = NativeTransfer(block_rows=65_400, logs=logger)
 print(nt)
 # Вывод в консоль:
 # ┌────────────────────────────────┐
 # | NativeTransfer ver 0.0.1       |
 # ╞════════════════════════════════╡
-# | Write Rows Per Block : 65536   |
+# | Write Rows Per Block : 65400   |
 # └────────────────────────────────┘
 # Инициализировать файл Native для чтения
 file = nt.open("examples/test_read.native")

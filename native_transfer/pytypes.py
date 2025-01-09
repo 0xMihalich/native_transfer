@@ -109,8 +109,6 @@ def make_dtype(min_val: Any,
     """Сформировать строку DType."""
     if is_nullable:
         return f"Nullable({make_dtype(min_val, max_val, is_fixed, False)})"
-    elif isinstance(max_val, list):
-        return f"Array({make_dtype(max_val[0], max_val[-1], is_fixed, is_nullable)})"
     elif isinstance(max_val, Enum):
         values: str = ", ".join(f"'{i.name}' = {i.value}" for i in max_val.__class__)
         if -128 <= min_val and max_val <= 127:
@@ -186,10 +184,10 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
             max_val = frame.select(max(column)).item()
         except InvalidOperationError:
             try:
-                min_val, *_, max_val = frame[column].to_list()
+                min_val, *_, max_val = frame[column].drop_nulls().to_list()
             except ValueError:
                 try:
-                    min_val = max_val = frame[column].to_list()[0]
+                    min_val = max_val = frame[column].drop_nulls().to_list()[0]
                 except ValueError:
                     min_val = max_val = None
                     is_nullable = True
@@ -198,6 +196,14 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
             is_fixed: bool = frame.filter(col(column).is_not_null()).select(
                 (col(column).str.len_chars() == len(max_val)).all()
             ).item()
+
+        if isinstance(min_val, list) or isinstance(max_val, list):
+            values: List[Any] = sum(frame[column].to_list(), [])
+            is_nullable = None in values
+            min_val, *_, max_val = sorted(value for value in values if value is not None)
+            del values
+            dtypes.append(f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})")
+            continue
 
         dtypes.append(make_dtype(min_val, max_val, is_fixed, is_nullable))
 
@@ -237,6 +243,14 @@ def dtype_from_pandas(frame: PdFrame) -> List[str]:
         elif isinstance(min_val, generic) or isinstance(max_val, generic):
             min_val = min_val.item()
             max_val = max_val.item()
+        
+        if isinstance(min_val, list) or isinstance(max_val, list):
+            values: List[Any] = sum(frame[column].dropna().to_list(), [])
+            is_nullable = None in values
+            min_val, *_, max_val = sorted(value for value in values if value is not None)
+            del values
+            dtypes.append(f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})")
+            continue
 
         dtypes.append(make_dtype(min_val, max_val, is_fixed, is_nullable))
 

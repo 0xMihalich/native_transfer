@@ -85,7 +85,7 @@ class NativeTransfer:
     __version__ = __version__
 
     def __init__(self: "NativeTransfer",
-                 block_rows: int = 65_536,
+                 block_rows: int = 65_400,
                  logs: Logger = getLogger(__name__)) -> None:
         """Инициализация класса."""
 
