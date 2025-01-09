@@ -239,24 +239,4 @@ Columns description:
 Возможные значения:
 + Pandas = 0,
 + Polars = 1
-
-Начало работы. Импортирование класса NativeTransfer:
-
->> # Импортировать логгер.
->> import logging
->> # Импортировать класс из библиотеки.
->> from native_transfer import NativeTransfer
->> # Установить DEBUG level для логгера.
->> logger = logging.getLogger("NativeTransfer")
->> logger.setLevel(logging.DEBUG)
->> # Два необязательных параметра:
->> # block_rows - сколько максимально строк из DataFrame писать в один блок.
->> # logs - передать экземпляр логгера для логирования событий.
->> nt = NativeTransfer(block_rows=65_536, logs=logger)
->> nt
-┌────────────────────────────────┐
-│ NativeTransfer ver 0.0.1       │
-╞════════════════════════════════╡
-│ Write Rows Per Block : 65536   │
-└────────────────────────────────┘
 """
