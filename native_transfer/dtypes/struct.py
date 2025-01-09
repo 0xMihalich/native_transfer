@@ -6,6 +6,7 @@ from typing import (
     Optional,
 )
 
+from ..defaults import null_correction
 from ..errors import NativeDTypeError
 from ..lens import read_lens
 
@@ -40,10 +41,11 @@ class DType(NamedTuple):
         """Записать данные в Native Format."""
 
         if not isinstance(value, self.dtype):
-            raise NativeDTypeError(f"DType {type(value)} not match with {self.dtype}.")
+            if value is not None:
+                raise NativeDTypeError(f"DType {type(value)} not match with {self.dtype}.")
 
         self.write_func(
-            value,
+            null_correction(value, self.dtype),
             file,
             self.lens,
             self.tzinfo,

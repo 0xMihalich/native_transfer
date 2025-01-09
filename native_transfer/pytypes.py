@@ -17,7 +17,11 @@ from typing import (
 )
 from uuid import UUID
 
-from pandas import DataFrame as PdFrame
+from numpy import generic
+from pandas import (
+    DataFrame as PdFrame,
+    Timestamp,
+)
 from polars import (
     col,
     max,
@@ -103,7 +107,6 @@ def make_dtype(min_val: Any,
                is_fixed: bool,
                is_nullable: bool,) -> str:
     """Сформировать строку DType."""
-
     if is_nullable:
         return f"Nullable({make_dtype(min_val, max_val, is_fixed, False)})"
     elif isinstance(max_val, list):
@@ -189,6 +192,7 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
                     min_val = max_val = frame[column].to_list()[0]
                 except ValueError:
                     min_val = max_val = None
+                    is_nullable = True
 
         if isinstance(min_val, str) and len(min_val) == len(max_val):
             is_fixed: bool = frame.filter(col(column).is_not_null()).select(
@@ -213,19 +217,26 @@ def dtype_from_pandas(frame: PdFrame) -> List[str]:
         max_val: Any
 
         try:
-            _data: List[Any] = frame[column].dropna().to_list()
-            min_val = min(_data)
-            max_val = max(_data)
-        except TypeError:
-            min_val, *_, max_val = _data
-        except ValueError:
+            min_val = frame[column].dropna().min()
+            max_val = frame[column].dropna().max()
+        except (TypeError, ValueError):
             try:
-                min_val = max_val = _data[0]
-            except IndexError:
-                min_val = max_val = None
+                min_val, *_, max_val = frame[column].dropna().to_list()
+            except ValueError:
+                try:
+                    min_val = max_val = frame[column].dropna().to_list()[0]
+                except ValueError:
+                    min_val = max_val = None
+                    is_nullable = True
 
         if isinstance(min_val, str) and len(min_val) == len(max_val):
             is_fixed: bool = (frame[column].str.len() == len(max_val)).all()
+        elif isinstance(min_val, Timestamp) or isinstance(max_val, Timestamp):
+            min_val = min_val.to_pydatetime()
+            max_val = max_val.to_pydatetime()
+        elif isinstance(min_val, generic) or isinstance(max_val, generic):
+            min_val = min_val.item()
+            max_val = max_val.item()
 
         dtypes.append(make_dtype(min_val, max_val, is_fixed, is_nullable))
 

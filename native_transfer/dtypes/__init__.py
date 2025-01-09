@@ -102,7 +102,7 @@ def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array
     elif dtype == "Nullable":
         return DType(dtype, bool, read_nullable, write_nullable, total_rows, 1, nullables=get_dtype(match.group(2), total_rows))
     elif dtype == "Nothing":
-        return DType(dtype, None, read_nothing, write_nothing, total_rows, 1)
+        return DType(dtype, type(None), read_nothing, write_nothing, total_rows, 1)
     elif dtype == "Date":
         return DType(dtype, date, read_date, write_date, total_rows, 2)
     elif dtype == "Date32":
