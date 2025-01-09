@@ -36,7 +36,10 @@ from .dates import (
     write_datetime,
     write_datetime64,
 )
-from .decimals import read_decimal
+from .decimals import (
+    read_decimal,
+    write_decimal,
+)
 from .struct import DType
 from .enums import (
     parse_enum,
@@ -76,10 +79,7 @@ from .uuids import (
     write_uuid,
 )
 
-from ..errors import (
-    NativeDTypeError,
-    decimal_error,
-)
+from ..errors import NativeDTypeError
 
 
 def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array, DType, LowCardinality]:
@@ -125,7 +125,7 @@ def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array
             lens = 16
         elif 39 <= precission <= 76:
             lens = 32
-        return DType(dtype, float, read_decimal, decimal_error, total_rows, lens, precission=precission, scale=scale,)
+        return DType(dtype, float, read_decimal, write_decimal, total_rows, lens, precission=precission, scale=scale,)
     elif dtype in ("Enum8", "Enum16"):
         enum: Dict[int, str] = parse_enum(raw_string)
         if dtype == "Enum8":

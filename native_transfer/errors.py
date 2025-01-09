@@ -47,9 +47,3 @@ def dtype_error(dtype: Any, *_: Union[int, str, None,],) -> NoReturn:
     """Функция вызова ошибки Data Type."""
 
     raise NativeDTypeError(f"Unsupported operation for Data Type {type(dtype)}.")
-
-
-def decimal_error(*_: Any,) -> NoReturn:
-    """Функция вызова ошибки Data Type."""
-
-    raise NativeDTypeError("Write operation for Data Type Decimal don't support.")

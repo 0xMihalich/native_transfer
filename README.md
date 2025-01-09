@@ -58,7 +58,7 @@
 | Float32               | +      | +      | float/float                          |
 | Float64               | +      | +      | float/float                          |
 | BFloat16              | +      | +      | float/float                          |
-| Decimal(P, S)         | +      | -      | float/-                              |
+| Decimal(P, S)         | +      | +      | float/float                          |
 | Decimal32(S)          | +      | -      | float/-                              |
 | Decimal64(S)          | +      | -      | float/-                              |
 | Decimal128(S)         | +      | -      | float/-                              |
@@ -89,6 +89,9 @@
 **DateTime64**.
 
 Данный тип требует указания precission для точности значений и часовой пояс, при этом datetime не имеет аттрибутов nanoseconds и microseconds, поэтому при извлечении из класса теряется точность, при упаковке назад без явного указания precission будет выбран формат DateTime64(3, <Часовой пояс из объекта datetime>)
+
+**Decimal(P, S)**.
+Данный тип невозможно определить автоматически при выполнении операции make. Для сохранения в Decimal необходимо явно передать тип данных в параметр dtypes.
 
 **Enum**.
 

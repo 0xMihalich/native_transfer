@@ -1,7 +1,10 @@
 from io import BufferedIOBase
 from typing import Any
 
-from .integers import read_int
+from .integers import (
+    read_int,
+    write_int,
+)
 
 from ..errors import NativePrecissionError
 
@@ -20,25 +23,37 @@ P from [ 39 : 76 ] - Int256
 Преобразовывать назад как Decimal не вижу смысла, будем писать в Native как Float32/Float64
 """
 
+def calc_lens(precission: int) -> int:
+    """Расчитать lens."""
+
+    if 1 <= precission <= 9:
+        return 4
+    elif 10 <= precission <= 18:
+        return 8
+    elif 19 <= precission <= 38:
+        return 16
+    elif 39 <= precission <= 76:
+        return 32
+
+    raise NativePrecissionError("precission must be in [1:76] range!")
+
 
 def read_decimal(file: BufferedIOBase, *args: Any,) -> float:
     """Прочитать Decimal(P, S) из Native Format."""
 
-    lens: int
     precission: int = args[2]
     scale: int = args[3]
-
-    if 1 <= precission <= 9:
-        lens = 4
-    elif 10 <= precission <= 18:
-        lens = 8
-    elif 19 <= precission <= 38:
-        lens = 16
-    elif 39 <= precission <= 76:
-        lens = 32
-    else:
-        raise NativePrecissionError("precission must be in [1:76] range!")
-
+    lens: int = calc_lens(precission)
     decimal: int = read_int(file, lens)
 
     return decimal / pow(10, scale)
+
+
+def write_decimal(decimal: float, file: BufferedIOBase, *args: Any,) -> None:
+    """Записать Decimal(P, S) в Native Format."""
+
+    precission: int = args[2]
+    scale: int = args[3]
+    lens: int = calc_lens(precission)
+
+    write_int(int(decimal * pow(10, scale)), file, lens)
