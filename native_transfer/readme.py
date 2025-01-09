@@ -117,13 +117,10 @@ JSON                    # Stores JavaScript Object Notation (JSON) documents in 
 
 Особенности реализации некоторых типов данных:
 
-FixedString(N).
-Для выбора данного типа из DataFrame нужно быть на 100% уверенным, что длина строки одинаковая.
-Возможно, позже добавлю передачу типов данных для записи в класс как параметр.
-
 DateTime64.
-Данный тип требует указания precission для точности значений и часовой пояс.
-Требуется придумать вариант получения обоих параметров из объекта datetime, либо реализовать явное указание для класса.
+Данный тип требует указания precission для точности значений и часовой пояс, при этом datetime не имеет аттрибутов
+nanoseconds и microseconds, поэтому при извлечении из класса теряется точность, при упаковке назад без явного указания
+precission будет выбран формат DateTime64(3, <Часовой пояс из объекта datetime>)
 
 Enum.
 При использовании данного типа в Clickhouse индексация начинается с 1, в то время как стандартом считается значение 0.
@@ -136,9 +133,114 @@ IPv4/IPv6.
 что в свою очередь повлечет за собой смену типа данных колонки во время операции записи.
 
 LowCardinality(T).
-Чтение из данного формата выполняется в наследованный формат, упаковка обратно пока не реализована.
+Чтение из данного формата выполняется в наследованный формат, упаковка обратно в формат LowCardinality(T) не предусмотрена.
 
-Начало работы:
+Основной класс NativeFormat:
+
+Не обязательные параметры при инициализации:
+* block_rows - максимальное количество строк в одном блоке при упаковке DataFrame в Native. Диапазон [1:1048576]. По умолчанию 65536
+* logs - экземпляр класса логирования logging.Logger
+
+Статические методы класса и их параметры:
+
+open
+* file - файл Native. Можно указать путь до файла, передать байты, открытый файл, файлоподобный объект или GzipFile
+* mode - режим работы с файлом. Чтение "rb", запись "wb". По умолчанию "rb"
+* write_compressed - булево, сжимать файл при создании Native из DataFrame - True, нет - False. По умолчанию False
+
+Возвращает объект io.BufferedIOBase | gzip.GzipFile
+
+info
+* file - объект с данными io.BufferedIOBase | gzip.GzipFile | pandas.DataFrame | polars.DataFrame
+
+Возвращает объект DataInfo
+
+Основные методы класса и их параметры:
+
+make
+* frame - датафрейм входных данных pandas.DataFrame | polars.DataFrame
+* file - объект файла для записи io.BufferedIOBase | gzip.GzipFile
+* columns - [не обязательно] список имен колонок если нужно изменить некоторые названия без изменения датафрейм. Должен полностью совпадать с количеством колонок в DataFrame
+* dtypes - [не обязательно] список типов данных для колонок. Если пусто типы данных будут определены автоматически
+
+В результате работы будет создан файл Native из DataFrame, дополнительно метод ничего не возвращает
+
+extract_block
+* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
+* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
+
+В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий один блок из Native
+
+extract
+* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
+* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
+
+В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий весь файл Native
+
+Ошибки, возвращаемые классом NativeFormat:
+
+* NativeError - Базовая ошибка
+* NativeDateError - Ошибка при получении Date/Date32
+* NativeDateTimeError - Ошибка при получении DateTime/DateTime64
+* NativeDTypeError - Неверный Data Type
+* NativeEnumError - Неверный тип Enum
+* NativePrecissionError - Неверный precission
+* NativeReadError - Ошибка чтения
+* NativeWriteError - Ошибка записи
+
+Дополнительные классы:
+
+* DataFormat - Enum для определения формата обрабатываемых данных. Является атрибутом класса DataInfo.
+
+Возможные значения:
++ Native = 0,
++ GzipNative = 1,
++ Pandas = 2,
++ Polars = 3
+
+* DataInfo - NamedTuple с назначенным строковым представлением.
+
+Атрибуты класса:
++ data_format - объект DataFormat,
++ columns - список колонок,
++ dtypes - список типов данных Clickhouse,
++ total_rows - количество строк в объекте
+
+Пример строкового представления класса DataInfo:
+
+```
+Data info:
+──────────
+Format: Native      
+Total columns: 15   
+Total rows: 69592   
+
+Columns description:
+────────────────────
+  1. Period [ Date ]
+  2. Data [ Date ]
+  3. BranchGuid [ FixedString(36) ]
+  4. BranchName [ String ]
+  5. UserGuid [ FixedString(36) ]
+  6. UserName [ String ]
+  7. ProductGuid [ FixedString(36) ]
+  8. NumberProduct [ LowCardinality(String) ]
+  9. Product [ String ]
+ 10. DisplayAmount [ Int32 ]
+ 11. RemovingAmount [ Int32 ]
+ 12. Script [ Enum8('Продажи' = 1, 'Отгрузка' = 2, 'Нет' = 3) ]
+ 13. ProductGroup [ Enum8('ТВ/Монитор' = 1, 'КБТ' = 2, 'Средний товар' = 3, 'Мелкий товар' = 4, 'Товар с термоценником' = 5, 'Неизвестно' = 6) ]
+ 14. RemovingSystem [ Enum8('1С' = 1, 'Web' = 2, 'Автокасса' = 3, 'МП' = 4, 'СП' = 5, 'СЯХ' = 6, '' = 7) ]
+ 15. RemovingTool [ LowCardinality(String) ]
+```
+
+* FrameType - Enum для выбора формата чтения.
+
+Возможные значения:
++ Pandas = 0,
++ Polars = 1
+
+Начало работы. Импортирование класса NativeTransfer:
 
 >> # Импортировать логгер.
 >> import logging

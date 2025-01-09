@@ -10,7 +10,7 @@ from logging import (
     getLogger,
 )
 from os import PathLike
-from struct import error
+from struct import error as EOF
 from typing import (
     List,
     Optional,
@@ -46,6 +46,7 @@ from .errors import (
     NativeReadError,
     NativeWriteError,
 )
+from .readtypes import FrameType
 from .info import (
     DataFormat,
     DataInfo,
@@ -63,6 +64,7 @@ from .readme import readme
 __all__ = (
     "DataFormat",
     "DataInfo",
+    "FrameType",
     "NativeTransfer",
     "NativeDateError",
     "NativeDateTimeError",
@@ -111,85 +113,63 @@ class NativeTransfer:
 
         return self.__str__()
 
-    def read_pdblock(self: "NativeTransfer", file: Union[BufferedIOBase, GzipFile]) -> PdFrame:
-        """Прочитать один блок в Pandas DataFrame из Native Format."""
-
-        try:
-            num_columns: int = read_lens(file)
-            total_rows: int = read_lens(file)
-            series: List[PdSeries] = []
-
-            for _ in range(num_columns):
-                name: str = read_string(file)
-                raw_string: str = read_string(file)
-                block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, total_rows)
-                series.append(PdSeries(data=block.read(file), name=name))
-
-            return pd_concat(series, axis=1)
-        except error as err:
-            raise err
-        except Exception as err:
-            self.logs.error(err)
-            raise NativeReadError(err)
-
-    def read_pd(self: "NativeTransfer", file: Union[BufferedIOBase, GzipFile]) -> PdFrame:
-        """Прочитать Pandas DataFrame из Native Format."""
-
-        file.seek(0)
-        data_frames: List[PdFrame] = []
-        self.logs.info(f"Read pandas frame from native file {file.name} operation started.")
-
-        while True:
-            try:
-                data_frames.append(self.read_pdblock(file))
-            except error:
-                break
-
-        self.logs.info(f"Read pandas frame from native file {file.name} operation success.")
-        return pd_concat(data_frames, ignore_index=True)
-
-    def read_plblock(self: "NativeTransfer", file: Union[BufferedIOBase, GzipFile]) -> PlFrame:
-        """Прочитать один блок в Pandas DataFrame из Native Format."""
-
-        try:
-            num_columns: int = read_lens(file)
-            total_rows: int = read_lens(file)
-            frames: List[PlFrame] = []
-
-            for _ in range(num_columns):
-                name: str = read_string(file)
-                raw_string: str = read_string(file)
-                block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, total_rows)
-                frames.append(PlFrame({name: block.read(file)}))
-
-            return pl_concat(frames, how="horizontal")
-        except error as err:
-            raise err
-        except Exception as err:
-            self.logs.error(err)
-            raise NativeReadError(err)
-
-    def read_pl(self: "NativeTransfer", file: Union[BufferedIOBase, GzipFile]) -> PlFrame:
-        """Прочитать Pandas DataFrame из Native Format."""
-
-        file.seek(0)
-        data_frames: List[PlFrame] = []
-        self.logs.info(f"Read polars frame from native file {file.name} operation started.")
-
-        while True:
-            try:
-                data_frames.append(self.read_plblock(file))
-            except error:
-                break
-
-        self.logs.info(f"Read polars frame from native file {file.name} operation success.")
-        return pl_concat(data_frames, how="vertical")
-
-    def create_native(self: "NativeTransfer",
-                      frame: Union[PdFrame, PlFrame],
+    def extract_block(self: "NativeTransfer",
                       file: Union[BufferedIOBase, GzipFile],
-                      columns: Optional[List[str]] = None,
-                      dtypes: Optional[List[str]] = None,) -> None:
+                      frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
+        """Прочитать один блок в polars/pandas DataFrame из Native Format."""
+
+        try:
+            num_columns: int = read_lens(file)
+            total_rows: int = read_lens(file)
+            frames: List[Union[PdSeries, PlFrame]] = []
+
+            for _ in range(num_columns):
+                name: str = read_string(file)
+                raw_string: str = read_string(file)
+                block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, total_rows)
+
+                if frame_type == FrameType.Pandas:
+                    frames.append(PdSeries(data=block.read(file), name=name))
+                elif frame_type == FrameType.Polars:
+                    frames.append(PlFrame({name: block.read(file)}))
+
+            if frame_type == FrameType.Pandas:
+                return pd_concat(frames, axis=1)
+            elif frame_type == FrameType.Polars:
+                return pl_concat(frames, how="horizontal")
+        except EOF as err:
+            raise err
+        except Exception as err:
+            self.logs.error(err)
+            raise NativeReadError(err)
+
+    def extract(self: "NativeTransfer",
+                file: Union[BufferedIOBase, GzipFile],
+                frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
+        """Прочитать polars/pandas DataFrame из Native Format."""
+
+        file.seek(0)
+        data_frames: List[Union[PdFrame, PlFrame]] = []
+        self.logs.info(f"Read DataFrame from Native File {file.name} operation started.")
+
+        while True:
+            try:
+                data_frames.append(self.extract_block(file, frame_type))
+            except EOF:
+                break
+
+        self.logs.info(f"Read DataFrame from Native File {file.name} operation success.")
+
+        if frame_type == FrameType.Pandas:
+            return pd_concat(data_frames, ignore_index=True)
+        elif frame_type == FrameType.Polars:
+            return pl_concat(data_frames, how="vertical")
+
+    def make(self: "NativeTransfer",
+             frame: Union[PdFrame, PlFrame],
+             file: Union[BufferedIOBase, GzipFile],
+             columns: Optional[List[str]] = None,
+             dtypes: Optional[List[str]] = None,) -> None:
         """Создать Native Format из DataFrame."""
 
         try:
@@ -296,7 +276,7 @@ class NativeTransfer:
                     block.skip(file, _total_rows)
 
                 total_rows += _total_rows
-            except error:
+            except EOF:
                 break
 
         return get_info(data_value, columns, dtypes, total_rows)

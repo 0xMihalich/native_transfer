@@ -131,38 +131,28 @@ info
 
 ### Основные методы класса и их параметры
 
-create_native
+make
 
 * frame - датафрейм входных данных pandas.DataFrame | polars.DataFrame
 * file - объект файла для записи io.BufferedIOBase | gzip.GzipFile
 * columns - [не обязательно] список имен колонок если нужно изменить некоторые названия без изменения датафрейм. Должен полностью совпадать с количеством колонок в DataFrame
 * dtypes - [не обязательно] список типов данных для колонок. Если пусто типы данных будут определены автоматически
 
-В результате работы будет создан файл Native из DataFrame, возврат из метода каких-то дополнительных данных не предусмотрен
+В результате работы будет создан файл Native из DataFrame, дополнительно метод ничего не возвращает
 
-read_pdblock
-
-* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
-
-В результате работы будет возвращен объект pandas.DataFrame, содержащий один блок из Native
-
-read_pd
+extract_block
 
 * file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
+* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
 
-В результате работы будет возвращен объект pandas.DataFrame, содержащий весь файл Native
+В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий один блок из Native
 
-read_plblock
-
-* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
-
-В результате работы будет возвращен объект polars.DataFrame, содержащий один блок из Native
-
-read_pl
+extract
 
 * file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
+* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
 
-В результате работы будет возвращен объект polars.DataFrame, содержащий весь файл Native
+В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий весь файл Native
 
 ## Ошибки, возвращаемые классом NativeFormat
 
@@ -220,6 +210,12 @@ Columns description:
  14. RemovingSystem [ Enum8('1С' = 1, 'Web' = 2, 'Автокасса' = 3, 'МП' = 4, 'СП' = 5, 'СЯХ' = 6, '' = 7) ]
  15. RemovingTool [ LowCardinality(String) ]
 ```
+
+* FrameType - Enum для выбора формата чтения.
+
+Возможные значения:
+**Pandas** = 0,
+**Polars** = 1
 
 ## Начало работы. Импортирование класса NativeTransfer
 
