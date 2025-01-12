@@ -76,18 +76,18 @@ __all__ = (
     "NativeWriteError",
 )
 __doc__ = readme
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 
 class NativeTransfer:
-    """Класс для работы с Clickhouse Native Format."""
+    """Class for working with Clickhouse Native Format."""
 
     __version__ = __version__
 
     def __init__(self: "NativeTransfer",
                  block_rows: int = 65_400,
                  logs: Logger = getLogger(__name__)) -> None:
-        """Инициализация класса."""
+        """Class initialization."""
 
         if not isinstance(block_rows, int):
             raise NativeError("block_rows must be integer.")
@@ -100,7 +100,7 @@ class NativeTransfer:
         self.logs.info(f"NativeTransfer initialized with {self.block_rows} block rows.")
 
     def __str__(self: "NativeTransfer") -> str:
-        """Строковое представление класса."""
+        """String representation of class."""
 
         return f"""┌────────────────────────────────┐
 │ NativeTransfer ver {self.__version__:<7}     │
@@ -109,14 +109,14 @@ class NativeTransfer:
 └────────────────────────────────┘"""
 
     def __repr__(self: "NativeTransfer") -> str:
-        """Строковое представление класса в интерпретаторе."""
+        """String representation of class in interpreter."""
 
         return self.__str__()
 
     def extract_block(self: "NativeTransfer",
                       file: Union[BufferedIOBase, GzipFile],
                       frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
-        """Прочитать один блок в polars/pandas DataFrame из Native Format."""
+        """Read one block from Native Format to polars/pandas DataFrame."""
 
         try:
             num_columns: int = read_lens(file)
@@ -146,7 +146,7 @@ class NativeTransfer:
     def extract(self: "NativeTransfer",
                 file: Union[BufferedIOBase, GzipFile],
                 frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
-        """Прочитать polars/pandas DataFrame из Native Format."""
+        """Read Native Format file to polars/pandas DataFrame."""
 
         file.seek(0)
         data_frames: List[Union[PdFrame, PlFrame]] = []
@@ -170,7 +170,7 @@ class NativeTransfer:
              file: Union[BufferedIOBase, GzipFile],
              columns: Optional[List[str]] = None,
              dtypes: Optional[List[str]] = None,) -> None:
-        """Создать Native Format из DataFrame."""
+        """Make Native Format from polars/pandas DataFrame."""
 
         try:
             self.logs.info(f"Create native file {file.name} from DataFrame started.")
@@ -211,7 +211,7 @@ class NativeTransfer:
     def open(file: Union[str, PathLike, bytes, BytesIO, BufferedIOBase, BufferedWriter, GzipFile],
              mode: str = "rb",
              write_compressed: bool = False,) -> Union[BufferedIOBase, GzipFile]:
-        """Открыть файл для чтения/записи."""
+        """Open file for read/write."""
 
         if isinstance(file, GzipFile):
             file.seek(0)
@@ -239,7 +239,7 @@ class NativeTransfer:
 
     @staticmethod
     def info(file: Union[BufferedIOBase, BufferedReader, BufferedWriter, GzipFile, PdFrame, PlFrame]) -> DataInfo:
-        """Получить информацию о данных."""
+        """Get info for input data."""
 
         data_value: Optional[int] = FORMAT_VALUES.get(file.__class__)
 

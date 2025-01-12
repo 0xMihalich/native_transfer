@@ -7,7 +7,7 @@ from typing import Union
 
 
 def pack_bfloat16(num_float: float) -> bytes:
-    """Упаковать float в формат BFloat16."""
+    """Pack float into BFloat16 value."""
 
     float32: int = unpack('I', pack('f', num_float))[0]
 
@@ -15,7 +15,7 @@ def pack_bfloat16(num_float: float) -> bytes:
 
 
 def unpack_bfloat16(bfloat16: bytes) -> float:
-    """Распаковать float из формата BFloat16."""
+    """Unpack float from BFloat16 value."""
 
     bits: str = bin(int.from_bytes(bfloat16, byteorder='little'))[2:].zfill(16)
     sign: int = 1 if bits[0] == "0" else -1
@@ -31,36 +31,36 @@ def unpack_bfloat16(bfloat16: bytes) -> float:
 
 
 def read_bfloat16(file: BufferedIOBase, *_: Union[int, str, None,],) -> float:
-    """Прочитать BFloat16 из Native Format."""
+    """Read BFloat16 from Native Format."""
 
     return unpack_bfloat16(file.read(2))
 
 
 def write_bfloat16(num_float: float, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать BFloat16 в Native Format."""
+    """Write BFloat16 into Native Format."""
 
     file.write(pack_bfloat16(num_float))
 
 
 def read_float32(file: BufferedIOBase, *_: Union[int, str, None,],) -> float:
-    """Прочитать Float32 из Native Format."""
+    """Read Float32 from Native Format."""
 
     return unpack('<f', file.read(4))[0]
 
 
 def write_float32(num_float: float, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать Float32 в Native Format."""
+    """Write Float32 into Native Format."""
 
     file.write(pack('<f', num_float))
 
 
 def read_float64(file: BufferedIOBase, *_: Union[int, str, None,],) -> float:
-    """Прочитать Float64 из Native Format."""
+    """Read Float64 from Native Format."""
 
     return unpack('<d', file.read(8))[0]
 
 
 def write_float64(num_float: float, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать Float64 в Native Format."""
+    """Write Float64 into Native Format."""
 
     file.write(pack('<d', num_float))

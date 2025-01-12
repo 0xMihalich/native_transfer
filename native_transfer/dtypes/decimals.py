@@ -10,21 +10,21 @@ from ..errors import NativePrecissionError
 
 
 __doc__ = """
-Все Decimals читаются и пишутся как Int8 - Int256.
-Независимо от указания альясов в таблицу это пишется как Decimal(P, S).
-Для преобразования во Float требуется:
-1. Определиться с размером signed integer:
-P from [ 1 : 9 ] - Int32
-P from [ 10 : 18 ] - Int64
-P from [ 19 : 38 ] - Int128
-P from [ 39 : 76 ] - Int256
-2. получить число из Native как signed integer.
-3. число / pow(10, S)
-Преобразовывать назад как Decimal не вижу смысла, будем писать в Native как Float32/Float64
+All Decimals are read and written as Int8 - Int256.
+Regardless of the specified aliases in the table, this is written as Decimal(P, S).
+To convert to Float, the following is required:
+1. Determine the size of the signed integer:
+P from [1: 9] - Int32
+P from [10: 18] - Int64
+P from [19: 38] - Int128
+P from [39: 76] - Int256
+2. Get the number from Native as a signed integer.
+3. Number / pow(10, S)
+I see no point in converting back to Decimal; we will write in Native as Float32/Float64.
 """
 
 def calc_lens(precission: int) -> int:
-    """Расчитать lens."""
+    """Calculate lens."""
 
     if 1 <= precission <= 9:
         return 4
@@ -39,7 +39,7 @@ def calc_lens(precission: int) -> int:
 
 
 def read_decimal(file: BufferedIOBase, *args: Any,) -> float:
-    """Прочитать Decimal(P, S) из Native Format."""
+    """Read Decimal(P, S) from Native Format."""
 
     precission: int = args[2]
     scale: int = args[3]
@@ -50,7 +50,7 @@ def read_decimal(file: BufferedIOBase, *args: Any,) -> float:
 
 
 def write_decimal(decimal: float, file: BufferedIOBase, *args: Any,) -> None:
-    """Записать Decimal(P, S) в Native Format."""
+    """Write Decimal(P, S) into Native Format."""
 
     precission: int = args[2]
     scale: int = args[3]

@@ -26,31 +26,31 @@ DATA: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def unpack_date(days: int) -> date:
-    """Получить дату."""
+    """Unpack date."""
 
     return (DATA + timedelta(days=days)).date()
 
 
 def pack_date(dateobj: date) -> int:
-    """Вернуть количество дней."""
+    """Pack date into integer."""
 
     return (dateobj - DATA.date()).days
 
 
 def unpack_datetime(seconds: Union[int, float]) -> datetime:
-    """Получить timestamp."""
+    """Unpack timestamp."""
 
     return DATA + timedelta(seconds=seconds)
 
 
 def pack_datetime(datetimeobj: datetime) -> Union[int, float]:
-    """Вернуть количество секунд/тиков."""
+    """Pack datetime into count seconds or ticks."""
 
     return (datetimeobj.astimezone(timezone.utc) - DATA).total_seconds()
 
 
 def read_date(file: BufferedIOBase, *_: Union[int, str, None,],) -> date:
-    """Прочитать Date из Native Format."""
+    """Read Date from Native Format."""
 
     try:
         return unpack_date(unpack('<H', file.read(2))[0])
@@ -59,7 +59,7 @@ def read_date(file: BufferedIOBase, *_: Union[int, str, None,],) -> date:
 
 
 def write_date(dateobj: date, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать Date в Native Format."""
+    """Write Date into Native Format."""
 
     days: int = pack_date(dateobj)
 
@@ -70,7 +70,7 @@ def write_date(dateobj: date, file: BufferedIOBase, *_: Union[int, str, None,],)
 
 
 def read_date32(file: BufferedIOBase, *_: Union[int, str, None,],) -> date:
-    """Прочитать Date32 из Native Format."""
+    """Read Date32 from Native Format."""
 
     try:
         return unpack_date(unpack('<l', file.read(4))[0])
@@ -79,7 +79,7 @@ def read_date32(file: BufferedIOBase, *_: Union[int, str, None,],) -> date:
 
 
 def write_date32(dateobj: date, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать Date32 в Native Format."""
+    """Write Date32 into Native Format."""
 
     days: int = pack_date(dateobj)
 
@@ -90,7 +90,7 @@ def write_date32(dateobj: date, file: BufferedIOBase, *_: Union[int, str, None,]
 
 
 def read_datetime(file: BufferedIOBase, *args: Union[int, str, None,],) -> datetime:
-    """Прочитать DateTime из Native Format."""
+    """Read DateTime from Native Format."""
 
     try:
         datetimeobj: datetime = unpack_datetime(unpack('<l', file.read(4))[0])
@@ -105,7 +105,7 @@ def read_datetime(file: BufferedIOBase, *args: Union[int, str, None,],) -> datet
 
 
 def write_datetime(datetimeobj: datetime, file: BufferedIOBase, *_: Union[int, str, None,],) -> None:
-    """Записать DateTime в Native Format."""
+    """Write DateTime into Native Format."""
 
     seconds: int = int(pack_datetime(datetimeobj))
 
@@ -116,7 +116,7 @@ def write_datetime(datetimeobj: datetime, file: BufferedIOBase, *_: Union[int, s
 
 
 def read_datetime64(file: BufferedIOBase, *args: Union[int, str, None,],) -> datetime:
-    """Прочитать DateTime64 из Native Format."""
+    """Read DateTime64 from Native Format."""
 
     try:
         precission: int = args[2]
@@ -139,7 +139,7 @@ def read_datetime64(file: BufferedIOBase, *args: Union[int, str, None,],) -> dat
 
 
 def write_datetime64(datetimeobj: datetime, file: BufferedIOBase, *args: Union[int, str, None,],) -> None:
-    """Записать DateTime64 в Native Format."""
+    """Write DateTime64 into Native Format."""
 
     precission: int = args[2]
     seconds: int = int(pack_datetime(datetimeobj)) // pow(10, -precission)

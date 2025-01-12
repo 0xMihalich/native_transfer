@@ -6,44 +6,44 @@ from typing import (
 
 
 class NativeError(Exception):
-    """Базовая ошибка."""
+    """Base error."""
 
 
 class NativeReadError(NativeError):
-    """Ошибка чтения."""
+    """Read error."""
 
 
 class NativeWriteError(NativeError):
-    """Ошибка записи."""
+    """Write error."""
 
 
 class NativeEnumError(ValueError):
-    """Неверный тип Enum."""
+    """Enum error."""
 
 
 class NativePrecissionError(ValueError):
-    """Неверный precission."""
+    """Value precission error."""
 
 
 class NativeDTypeError(TypeError):
-    """Неверный Data Type."""
+    """Data Type error."""
 
 
 class NativeDateError(ValueError):
-    """Ошибка при получении Date/Date32."""
+    """Date/Date32 error."""
 
 
 class NativeDateTimeError(ValueError):
-    """Ошибка при получении DateTime/DateTime64."""
+    """DateTime/DateTime64 error."""
 
 
 def any_error(any: Any, *_: Union[int, str, None,],) -> NoReturn:
-    """Функция вызова любой ошибки."""
+    """Any error raise error function."""
 
     raise NativeError(f"Unknown error {any}.")
 
 
 def dtype_error(dtype: Any, *_: Union[int, str, None,],) -> NoReturn:
-    """Функция вызова ошибки Data Type."""
+    """Data Type raise error function."""
 
     raise NativeDTypeError(f"Unsupported operation for Data Type {type(dtype)}.")

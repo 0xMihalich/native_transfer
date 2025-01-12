@@ -39,36 +39,36 @@ from ..lens import read_lens
 
 
 __doc__ = """
-Чтение данных из блока LowCardinality:
-0. Поддерживаемые типы данных: String, FixedString, Date, DateTime и числа за исключением типа Decimal.
-1. Количество строк в header при работе с данным форматом игнорируется.
-2. Пропускаем блок в 16 байт, он не будет учавствовать в парсере.
-3. Читаем общее количество уникальных элементов в блоке как UInt64 (8 байт).
-4. На основании числа, полученного в 3 пункте определяем размер индекса:
-UInt8   (1 байт)   — [0 : 255]
-UInt16  (2 байта)  — [0 : 65535]
-UInt32  (4 байта)  — [0 : 4294967295]
-UInt64  (8 байт)   — [0 : 18446744073709551615]
-UInt128 (16 байт)  — [0 : 340282366920938463463374607431768211455]
-UInt256 (32 байта) — [0 : 115792089237316195423570985008687907853269984665640564039457584007913129639935]
-5. Читаем все элементы как словарь: ключ = индекс с 0, значение = элемент.
-Первым элементом всегда пишется default значение для указанного типа данных.
-В случае, если дополнительно указано Nullable [пример LowCardinality(Nullable(String))] первые два значения будут default,
-но элемент с индексом 0 соответствует None, элемент с индексом 1 соответствует default значению для данного типа данных (пустая строка).
-6. Читаем общее количество элементов в блоке как UInt64 (8 байт). Данный параметр соответствует количеству строк в header
-7. Читаем индекс каждого элемента согласно размеру, полученному в пункте 2 и соотносим со значением словаря
-Упаковыварь все это назад не вижу смысла, поэтому данный класс будет предназначен только для чтения из Native Format.
+Reading data from LowCardinality block:
+0. Supported data types: String, FixedString, Date, DateTime, and numbers excepting Decimal.
+1. The number of rows in the header is ignored when working with this format.
+2. Skip the 16-byte block; it will not participate in the parser.
+3. Read the total number of unique elements in the block as UInt64 (8 bytes).
+4. Based on the number obtained in point 3, determine the size of the index:
+UInt8   (1 byte)   — [0 : 255]
+UInt16  (2 bytes)  — [0 : 65535]
+UInt32  (4 bytes)  — [0 : 4294967295]
+UInt64  (8 bytes)  — [0 : 18446744073709551615]
+UInt128 (16 bytes)  — [0 : 340282366920938463463374607431768211455]
+UInt256 (32 bytes) — [0 : 115792089237316195423570985008687907853269984665640564039457584007913129639935]
+5. Read all elements as a dictionary: key = index starting from 0, value = element.
+The first element always writes the default value for the specified data type.
+If Nullable is additionally specified [for example, LowCardinality(Nullable(String))], the first two values will be default,
+but the element with index 0 corresponds to None, and the element with index 1 corresponds to the default value for this data type (an empty string).
+6. Read the total number of elements in the block as UInt64 (8 bytes). This parameter corresponds to the number of rows in the header.
+7. Read the index of each element according to the size obtained in point 4 and relate it to the value in the dictionary.
+I see no point in packing all this back, so this class will be intended only for reading from Native Format.
 """
 
 LCType = TypeVar('LCType', str, date, datetime, int, float, None,)
 
 
 class LowCardinality:
-    """Класс для распаковки данных блока LowCardinality в обычный Data Type
-       (String, FixedString, Date, DateTime и числа за исключением типа Decimal)."""
+    """Class for unpacking data from the LowCardinality block into a regular Data Type
+       (String, FixedString, Date, DateTime, and numbers excepting Decimal)."""
     
     def __init__(self: "LowCardinality", raw_string: str, total_rows: Optional[int],) -> None:
-        """Инициализация класса."""
+        """Class initialization."""
 
         pattern: str = r"^(\w+)(?:\((.*?)\))?$"
         match: Optional[Match] = search(pattern, raw_string)
@@ -133,7 +133,7 @@ class LowCardinality:
 
     @staticmethod
     def _read_values(file: BufferedIOBase) -> Tuple[int, ...]:
-        """Определить count_elements и index_lens."""
+        """Found count_elements and index_lens."""
 
         file.seek(file.tell() + 16)  # skip header
         count_elements: int = read_uint(file, 8)
@@ -157,7 +157,7 @@ class LowCardinality:
         return count_elements, index_lens
 
     def read(self: "LowCardinality", file: BufferedIOBase) -> List[LCType]:
-        """Прочитать элементы из блока LowCardinality."""
+        """Read items from LowCardinality block."""
 
         count_elements, index_lens = self._read_values(file)
         elements: List[LCType] = [self.read_func(file, self.lens, self.tzinfo) for _ in range(count_elements)]
@@ -172,12 +172,12 @@ class LowCardinality:
         return [map_elements[read_uint(file, index_lens)] for _ in range(total_count)]
 
     def write(self: "LowCardinality", *_: Union[List[Any], BufferedIOBase]) -> NoReturn:
-        """Запись не поддерживается."""
+        """Write functions don't support."""
 
         raise NativeDTypeError("Write to LowCardinality don't support.")
 
     def skip(self: "LowCardinality", file: BufferedIOBase, _: Optional[int] = None,) -> None:
-        """Пропустить блок LowCardinality."""
+        """Skip LowCardinality block."""
 
         count_elements, index_lens = self._read_values(file)
 

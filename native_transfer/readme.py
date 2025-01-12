@@ -1,23 +1,22 @@
-readme: str = """*NativeTransfer* - класс для работы с Clickhouse Native Format.
+readme: str = """*NativeTransfer* - class for working with Clickhouse Native Format.
 
-Описание формата на официальном сайте(https://clickhouse.com/docs/ru/interfaces/formats#native):
+Description of the format on the official website(https://clickhouse.com/docs/en/interfaces/formats#native):
 
+```quote
+The most efficient format. Data is written and read by blocks in binary format.
+For each block, the number of rows, number of columns, column names and types,
+and parts of columns in this block are recorded one after another. In other words,
+this format is “columnar” – it does not convert columns to rows.
+This is the format used in the native interface for interaction between servers,
+for using the command-line client, and for C++ clients.
+
+You can use this format to quickly generate dumps that can only be read by the ClickHouse DBMS.
+It does not make sense to work with this format yourself.
 ```
-Самый эффективный формат. Данные пишутся и читаются блоками в бинарном виде.
-Для каждого блока пишется количество строк, количество столбцов, имена и типы столбцов,
-а затем кусочки столбцов этого блока, один за другим.
-То есть, этот формат является «столбцовым» - не преобразует столбцы в строки.
-Именно этот формат используется в родном интерфейсе - при межсерверном взаимодействии,
-при использовании клиента командной строки, при работе клиентов, написанных на C++.
 
-Вы можете использовать этот формат для быстрой генерации дампов,
-которые могут быть прочитаны только СУБД ClickHouse.
-*Вряд ли имеет смысл работать с этим форматом самостоятельно.*
-```
+This library allows for data exchange between Clickhouse Native Format and pandas/polars DataFrame.
 
-Данная библиотека позволяет выполнить обмен данными между Clickhouse Native Format и pandas/polars DataFrame.
-
-Неподдерживаемые типы данных (на данный момент):
+Unsupported data types (at the moment):
 Tuple                   # Tuple(T1, T2, ...).
 Map                     # Map(K, V).
 Variant                 # Variant(T1, T2, ...).
@@ -36,9 +35,9 @@ Nested                  # Nested(name1 Type1, Name2 Type2, ...).
 Dynamic                 # This type allows to store values of any type inside it without knowing all of them in advance.
 JSON                    # Stores JavaScript Object Notation (JSON) documents in a single column.
 
-Поддерживаемые типы данных:
+Supported data types:
 ┌───────────────────────┬────────┬────────┬──────────────────────────────────────┐
-│ Тип данных Clickhouse │ Чтение │ Запись │ Тип данных Python (Чтение/запись)    │
+│ Clickhouse data type  │ Read   │ Write  │ Python data type (Read/Write)        │
 ╞═══════════════════════╪════════╪════════╪══════════════════════════════════════╡
 │ UInt8                 │ +      │ +      │ int/int                              │
 │-----------------------+--------+--------+--------------------------------------│
@@ -112,135 +111,107 @@ JSON                    # Stores JavaScript Object Notation (JSON) documents in 
 │-----------------------+--------+--------+--------------------------------------│
 │ Interval<Type**>      │ +      │ +      │ int/int                              │
 └───────────────────────┴────────┴────────┴──────────────────────────────────────┘
-*T - любой простой тип данных из перечисленных в таблице
-**Type - тип интервала: Nanosecond, Microsecond, Millisecond, Second, Minute, Hour, Day, Week, Month, Quarter, Year
+*T - any simple data type from those listed in the table
+**Type - interval type: Nanosecond, Microsecond, Millisecond, Second, Minute, Hour, Day, Week, Month, Quarter, Year
 
-Особенности реализации некоторых типов данных:
+Implementation features of some data types:
 
 DateTime64.
-Данный тип требует указания precission для точности значений и часовой пояс, при этом datetime не имеет аттрибутов
-nanoseconds и microseconds, поэтому при извлечении из класса теряется точность, при упаковке назад без явного указания
-precission будет выбран формат DateTime64(3, <Часовой пояс из объекта datetime>)
+This type requires specifying precision for the accuracy of values and a time zone;
+however, datetime does not have nanoseconds and microseconds attributes, so when extracting from the class, precision is lost.
+When packing back without explicitly specifying precision, the format DateTime64(3, ) will be chosen.
 
 Decimal(P, S).
-Данный тип невозможно определить автоматически при выполнении операции make. Для сохранения в Decimal необходимо явно
-передать тип данных в параметр dtypes.
+The type cannot be automatically determined when performing the make operation. To save as Decimal,
+it is necessary to explicitly pass the data type to the dtypes parameter.
 
 Enum.
-При использовании данного типа в Clickhouse индексация начинается с 1, в то время как стандартом считается значение 0.
-Так же в name могут попадать запрещенные имена, такие как пустая строка и mro. Поэтому, для предотвращения проблемы конвертации,
-колонка с Enum явно преобразуется в строки, соответствующие именам Enum. Для обратной записи колонка с Enum значениями напротив
-будет явно преобразована в тип данных Int8/Int16.
+When using this type in Clickhouse, indexing starts at 1, while the standard is considered to be 0.
+Additionally, the name may include prohibited names, such as an empty string and "mro."
+Therefore, to prevent conversion issues, the column with Enum is explicitly converted to strings corresponding to the Enum names.
+For reverse writing, the column with Enum values will be explicitly converted to the data types Int8/Int16.
 
 IPv4/IPv6.
-Данные типы данных при чтении в DataFrame могут неявно преобразовываться в строки,
-что в свою очередь повлечет за собой смену типа данных колонки во время операции записи.
+These data types may be implicitly converted to strings when reading into a DataFrame,
+which in turn will lead to a change in the data type of the column during the write operation.
 
 LowCardinality(T).
-Чтение из данного формата выполняется в наследованный формат, упаковка обратно в формат LowCardinality(T) не предусмотрена.
+Reading from this format is performed in a derived format; repacking back into the LowCardinality(T) format is not provided.
 
-Основной класс NativeFormat:
+Base class NativeFormat:
 
-Не обязательные параметры при инициализации:
-* block_rows - максимальное количество строк в одном блоке при упаковке DataFrame в Native. Диапазон [1:1048576]. По умолчанию 65400
-* logs - экземпляр класса логирования logging.Logger
+Optional parameters during initialization:
+* block_rows - the maximum number of rows in one block when packing a DataFrame into Native. Range [1:1048576]. Default is 65400.
+* logs - an instance of the logging.Logger class.
 
-Статические методы класса и их параметры:
+Static Methods of the Class and Their Parameters:
 
 open
-* file - файл Native. Можно указать путь до файла, передать байты, открытый файл, файлоподобный объект или GzipFile
-* mode - режим работы с файлом. Чтение "rb", запись "wb". По умолчанию "rb"
-* write_compressed - булево, сжимать файл при создании Native из DataFrame - True, нет - False. По умолчанию False
+* file - Native file. You can specify the path to the file, pass bytes, an open file, a file-like object, or GzipFile.
+* mode - file operation mode. Reading "rb", writing "wb". Default is "rb".
+* write_compressed - boolean, compress the file when creating Native from DataFrame - True, no - False. Default is False.
 
-Возвращает объект io.BufferedIOBase | gzip.GzipFile
+Returns an object of type io.BufferedIOBase | gzip.GzipFile.
 
 info
-* file - объект с данными io.BufferedIOBase | gzip.GzipFile | pandas.DataFrame | polars.DataFrame
+* file - data object io.BufferedIOBase | gzip.GzipFile | pandas.DataFrame | polars.DataFrame.
 
-Возвращает объект DataInfo
+Returns an object of type DataInfo.
 
-Основные методы класса и их параметры:
+Main Methods of the Class and Their Parameters:
 
 make
-* frame - датафрейм входных данных pandas.DataFrame | polars.DataFrame
-* file - объект файла для записи io.BufferedIOBase | gzip.GzipFile
-* columns - [не обязательно] список имен колонок если нужно изменить некоторые названия без изменения датафрейм. Должен полностью совпадать с количеством колонок в DataFrame
-* dtypes - [не обязательно] список типов данных для колонок. Если пусто типы данных будут определены автоматически
+* frame - input data DataFrame pandas.DataFrame | polars.DataFrame.
+* file - file object for writing io.BufferedIOBase | gzip.GzipFile.
+* columns - [optional] list of column names if you need to change some names without altering the DataFrame. Must fully match the number of columns in the DataFrame.
+* dtypes - [optional] list of data types for the columns. If empty, data types will be determined automatically.
 
-В результате работы будет создан файл Native из DataFrame, дополнительно метод ничего не возвращает
+As a result, a Native file will be created from the DataFrame; the method does not return anything additionally.
 
 extract_block
-* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
-* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
+* file - file object for reading io.BufferedIOBase | gzip.GzipFile.
+* frame_type - an object of the FrameType class to determine the output format. Default is FrameType.Pandas.
 
-В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий один блок из Native
+As a result, an object of type pandas.DataFrame | polars.DataFrame will be returned, containing one block from Native.
 
 extract
-* file - объект файла для чтения io.BufferedIOBase | gzip.GzipFile
-* frame_type - объект класса FrameType для определения выходного формата. По умолчанию FrameType.Pandas
+* file - file object for reading io.BufferedIOBase | gzip.GzipFile.
+* frame_type - an object of the FrameType class to determine the output format. Default is FrameType.Pandas.
 
-В результате работы будет возвращен объект pandas.DataFrame | polars.DataFrame, содержащий весь файл Native
+As a result, an object of type pandas.DataFrame | polars.DataFrame will be returned, containing the entire Native file.
 
-Ошибки, возвращаемые классом NativeFormat:
+Errors returned by NativeFormat class:
 
-* NativeError - Базовая ошибка
-* NativeDateError - Ошибка при получении Date/Date32
-* NativeDateTimeError - Ошибка при получении DateTime/DateTime64
-* NativeDTypeError - Неверный Data Type
-* NativeEnumError - Неверный тип Enum
-* NativePrecissionError - Неверный precission
-* NativeReadError - Ошибка чтения
-* NativeWriteError - Ошибка записи
+* NativeError - Base error
+* NativeDateError - Date/Date32 error
+* NativeDateTimeError - DateTime/DateTime64 error
+* NativeDTypeError - Data Type error
+* NativeEnumError - Enum error
+* NativePrecissionError - Value precission error
+* NativeReadError - Read error
+* NativeWriteError - Write error
 
-Дополнительные классы:
+Additional classes:
 
-* DataFormat - Enum для определения формата обрабатываемых данных. Является атрибутом класса DataInfo.
+* DataFormat - Enum for defining the format of the data being processed. It is an attribute of the DataInfo class.
 
-Возможные значения:
+Possible values:
 + Native = 0,
 + GzipNative = 1,
 + Pandas = 2,
 + Polars = 3
 
-* DataInfo - NamedTuple с назначенным строковым представлением.
+* DataInfo - NamedTuple with an assigned string representation.
 
-Атрибуты класса:
-+ data_format - объект DataFormat,
-+ columns - список колонок,
-+ dtypes - список типов данных Clickhouse,
-+ total_rows - количество строк в объекте
+Class attributes:
++ data_format - DataFormat object,
++ columns - list columns,
++ dtypes - list Clickhouse data types,
++ total_rows - count of rows in DataFormat object
 
-Пример строкового представления класса DataInfo:
+* FrameType - Enum to select reading format.
 
-```
-Data info:
-──────────
-Format: Native      
-Total columns: 15   
-Total rows: 69592   
-
-Columns description:
-────────────────────
-  1. Period [ Date ]
-  2. Data [ Date ]
-  3. BranchGuid [ FixedString(36) ]
-  4. BranchName [ String ]
-  5. UserGuid [ FixedString(36) ]
-  6. UserName [ String ]
-  7. ProductGuid [ FixedString(36) ]
-  8. NumberProduct [ LowCardinality(String) ]
-  9. Product [ String ]
- 10. DisplayAmount [ Int32 ]
- 11. RemovingAmount [ Int32 ]
- 12. Script [ Enum8('Продажи' = 1, 'Отгрузка' = 2, 'Нет' = 3) ]
- 13. ProductGroup [ Enum8('ТВ/Монитор' = 1, 'КБТ' = 2, 'Средний товар' = 3, 'Мелкий товар' = 4, 'Товар с термоценником' = 5, 'Неизвестно' = 6) ]
- 14. RemovingSystem [ Enum8('1С' = 1, 'Web' = 2, 'Автокасса' = 3, 'МП' = 4, 'СП' = 5, 'СЯХ' = 6, '' = 7) ]
- 15. RemovingTool [ LowCardinality(String) ]
-```
-
-* FrameType - Enum для выбора формата чтения.
-
-Возможные значения:
+Possible values:
 + Pandas = 0,
 + Polars = 1
 """

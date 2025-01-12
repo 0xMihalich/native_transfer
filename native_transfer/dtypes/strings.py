@@ -11,7 +11,7 @@ from ..lens import (
 
 
 def read_string(file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int, str, None,],) -> str:
-    """Прочитать строку из Native Format."""
+    """Read string from Native Format."""
 
     if not lens:
         lens: int = read_lens(file)
@@ -23,7 +23,7 @@ def read_string(file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int,
 
 
 def write_string(string: str, file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int, str, None,],) -> None:
-    """Записать строку в Native Format."""
+    """Write string into Native Format."""
 
     byte_str: bytes = string.encode("utf-8")
 

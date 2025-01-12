@@ -22,24 +22,24 @@ INTEGER_LENS: Dict[str, int] = {
 
 
 def read_int(file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> int:
-    """Прочитать signed integer из Native Format."""
+    """Read signed integer from Native Format."""
 
     return int.from_bytes(file.read(lens), "little", signed=True)
 
 
 def write_int(num: int, file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> None:
-    """Записать signed integer в Native Format."""
+    """Write signed integer into Native Format."""
 
     file.write(num.to_bytes(lens, "little", signed=True))
 
 
 def read_uint(file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> int:
-    """Прочитать unsigned integer из Native Format."""
+    """Read unsigned integer from Native Format."""
 
     return int.from_bytes(file.read(lens), "little", signed=False)
 
 
 def write_uint(num: int, file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> None:
-    """Записать unsigned integer в Native Format."""
+    """Write unsigned integer into Native Format."""
 
     file.write(num.to_bytes(lens, "little", signed=False))

@@ -9,7 +9,7 @@ from .errors import (
 
 
 def read_lens(file: BufferedIOBase) -> int:
-    """Декодирование длины из ClickHouse Native Format (количество колонок, количество строк, длина строки)."""
+    """Decoding length from ClickHouse Native Format (number of columns, number of rows, length of row)."""
 
     shift = 0
     x = 0
@@ -27,7 +27,7 @@ def read_lens(file: BufferedIOBase) -> int:
 
 
 def write_lens(lens: int, file: Optional[BufferedIOBase] = None) -> bytes:
-    """Кодирование длины в ClickHouse Native Format (количество колонок, количество строк, длина строки)."""
+    """Encoding length into ClickHouse Native Format (number of columns, number of rows, length of row)."""
 
     x = b""
 

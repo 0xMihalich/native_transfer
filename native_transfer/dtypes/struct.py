@@ -12,7 +12,7 @@ from ..lens import read_lens
 
 
 class DType(NamedTuple):
-    """Общая структура типа данных."""
+    """Base Data Type struct."""
 
     name: str
     dtype: type
@@ -26,7 +26,7 @@ class DType(NamedTuple):
     nullables: Optional["DType"] = None
 
     def _read(self: "DType", file: BufferedIOBase) -> Any:
-        """Прочитать данные из Native Format."""
+        """Read data from Native Format."""
 
         return self.read_func(
             file,
@@ -38,7 +38,7 @@ class DType(NamedTuple):
         )
 
     def _write(self: "DType", value: Any, file: BufferedIOBase) -> None:
-        """Записать данные в Native Format."""
+        """Write data into Native Format."""
 
         if not isinstance(value, self.dtype):
             if value is not None:
@@ -55,7 +55,7 @@ class DType(NamedTuple):
         )
 
     def read(self: "DType", file: BufferedIOBase) -> List[Any]:
-        """Прочитать все элементы блока."""
+        """Read block items."""
 
         if not self.total_rows:
             return []
@@ -74,7 +74,7 @@ class DType(NamedTuple):
         return [self._read(file) for _ in range(self.total_rows)]
 
     def write(self: "DType", values: List[Any], file: BufferedIOBase) -> None:
-        """Записать все элементы блока."""
+        """Write block items."""
 
         if not self.total_rows:
             return
@@ -92,7 +92,7 @@ class DType(NamedTuple):
     def skip(self: "DType",
              file: BufferedIOBase,
              total_count: Optional[int] = None,) -> None:
-        """Пропустить чтение блока."""
+        """Skip block."""
 
         total_rows: int = self.total_rows or total_count
 

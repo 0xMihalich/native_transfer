@@ -106,7 +106,7 @@ def make_dtype(min_val: Any,
                max_val: Any,
                is_fixed: bool,
                is_nullable: bool,) -> str:
-    """Сформировать строку DType."""
+    """Create DType string."""
     if is_nullable:
         return f"Nullable({make_dtype(min_val, max_val, is_fixed, False)})"
     elif isinstance(max_val, Enum):
@@ -168,7 +168,7 @@ def make_dtype(min_val: Any,
 
 
 def dtype_from_polars(frame: PlFrame) -> List[str]:
-    """Автоматически определить типы данных Clickhouse для polars.DataFrame."""
+    """Auto determine ClickHouse data types for polars.DataFrame"""
 
     columns: List[str] = frame.columns
     dtypes: List[str] = []
@@ -211,7 +211,7 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
 
 
 def dtype_from_pandas(frame: PdFrame) -> List[str]:
-    """Автоматически определить типы данных Clickhouse для pandas.DataFrame."""
+    """Auto determine ClickHouse data types for pandas.DataFrame."""
 
     columns: List[str] = list(frame.columns)
     dtypes: List[str] = []
@@ -263,5 +263,6 @@ SELECT_FRAME: Dict[type, object] = {
 }
 
 def dtype_from_frame(frame: Union[PdFrame, PlFrame]) -> List[str]:
+    """Auto determine ClickHouse data types."""
 
     return SELECT_FRAME.get(frame.__class__, dtype_error)(frame)

@@ -25,7 +25,7 @@ FORMAT_VALUES: Dict[type, int] = {
 }
 
 class DataFormat(Enum):
-    """Формат обрабатываемых данных."""
+    """Format of processed data.."""
 
     Native = 0
     GzipNative = 1
@@ -34,7 +34,7 @@ class DataFormat(Enum):
 
 
 class DataInfo(NamedTuple):
-    """Информация о формате данных."""
+    """Information about data format."""
 
     data_format: DataFormat
     columns: List[str]
@@ -42,7 +42,7 @@ class DataInfo(NamedTuple):
     total_rows: int
 
     def __str__(self: "DataInfo") -> str:
-        """Строковое представление класса."""
+        """String representation of class."""
 
         columns = "\n".join(
             f"{(num + 1):>3}. {col} [ {dtype} ]"
@@ -61,7 +61,7 @@ Columns description:
 {columns}"""
 
     def __repr__(self: "DataInfo") -> str:
-        """Строковое представление класса в интерпретаторе."""
+        """String representation of class in interpreter."""
 
         return self.__str__()
 
@@ -70,7 +70,7 @@ def get_info(data_value: int,
              columns: List[str],
              dtypes: List[str],
              total_rows: int,) -> DataInfo:
-    """Сформировать DataInfo."""
+    """Create DataInfo."""
 
     return DataInfo(
         DataFormat(data_value),

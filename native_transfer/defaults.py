@@ -30,7 +30,7 @@ NILL_VALUES: Dict[type, Any] = {
 
 
 def null_correction(value: Any, dtype: type) -> Any:
-    """Замена None значений на тип данных по-умолчанию."""
+    """Replacing None values with default values for current data type."""
 
     if value is None:
         return NILL_VALUES.get(dtype)

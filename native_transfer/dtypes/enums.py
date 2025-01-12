@@ -19,7 +19,7 @@ from ..errors import NativeEnumError
 
 
 def parse_enum(dtype: str) -> Dict[int, str]:
-    """Создание класса Enum8/Enum16 из строки."""
+    """Create Enum8/Enum16 dictionary from string."""
 
     finder: Optional[Match] = search(r"(Enum8|Enum16)\((.*?)\)", dtype)
 
@@ -30,7 +30,7 @@ def parse_enum(dtype: str) -> Dict[int, str]:
 
 
 def read_enum8(file: BufferedIOBase, *args: Union[int, str, Dict, None,],) -> str:
-    """Прочитать Enum8 из Native Format."""
+    """Read Enum8 from Native Format."""
 
     enum8: Dict[int, str] = args[4]
 
@@ -38,7 +38,7 @@ def read_enum8(file: BufferedIOBase, *args: Union[int, str, Dict, None,],) -> st
 
 
 def write_enum8(enum8: Union[int, Enum], file: BufferedIOBase, *_: Union[int, str, Dict, None,],) -> None:
-    """Записать Enum8 в Native Format."""
+    """Write Enum8 into Native Format."""
 
     if isinstance(enum8, Enum):
         enum8: int = enum8.value
@@ -47,7 +47,7 @@ def write_enum8(enum8: Union[int, Enum], file: BufferedIOBase, *_: Union[int, st
 
 
 def read_enum16(file: BufferedIOBase, *args: Union[int, str, Dict, None,],) -> str:
-    """Прочитать Enum16 из Native Format."""
+    """Read Enum16 from Native Format."""
 
     enum16: Dict[int, str] = args[4]
 
@@ -55,7 +55,7 @@ def read_enum16(file: BufferedIOBase, *args: Union[int, str, Dict, None,],) -> s
 
 
 def write_enum16(enum16: Union[int, Enum], file: BufferedIOBase, *_: Union[int, str, Enum, None,],) -> None:
-    """Записать Enum16 в Native Format."""
+    """Write Enum16 into Native Format."""
 
     if isinstance(enum16, Enum):
         enum16: int = enum16.value

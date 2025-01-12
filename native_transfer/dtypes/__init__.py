@@ -83,7 +83,7 @@ from ..errors import NativeDTypeError
 
 
 def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array, DType, LowCardinality]:
-    """Получить объект DType для работы с указанным типом данных."""
+    """Get DType object to work with specified data type.."""
 
     pattern: str = r"^(\w+)(?:\((.*?)\))?$"
     match: Optional[Match] = search(pattern, raw_string)

@@ -1,47 +1,47 @@
-# Импортировать логгер.
+# Import the logger.
 import logging
-# Импортировать класс из библиотеки.
+# Import the class from the library.
 from native_transfer import NativeTransfer, FrameType
-# Установить INFO level для логгера.
+# Set the INFO level for the logger.
 logging.basicConfig()
 logger = logging.getLogger("NativeTransfer")
 logger.setLevel(logging.INFO)
-# Два необязательных параметра:
-# block_rows - сколько максимально строк из DataFrame писать в один блок.
-# logs - передать экземпляр логгера для логирования событий.
+# Two optional parameters:
+# block_rows - the maximum number of rows from the DataFrame to write in one block.
+# logs - pass an instance of the logger for logging events.
 nt = NativeTransfer(block_rows=65_400, logs=logger)
 print(nt)
-# Вывод в консоль:
+# Console output:
 # ┌────────────────────────────────┐
 # | NativeTransfer ver 0.0.1       |
 # ╞════════════════════════════════╡
 # | Write Rows Per Block : 65400   |
 # └────────────────────────────────┘
-# Инициализировать файл Native для чтения
+# Initialize the Native file for reading
 file = nt.open("examples/test_read.native")
-# Прочитать информацию о файле
+# Read information about the file
 print(nt.info(file))
-# Прочитать из Native в pandas.DataFrame
+# Read from Native into pandas.DataFrame
 frame_pandas = nt.extract(file)
 print(frame_pandas)
-# Прочитать информацию о датафрейм
+# Read information about the DataFrame
 print(nt.info(frame_pandas))
-# Выбрать формат polars.DataFrame
+# Choose the format polars.DataFrame
 frame_type = FrameType.Polars
-# Прочитать из Native в polars.DataFrame
+# Read from Native into polars.DataFrame
 frame_polars = nt.extract(file, frame_type)
 print(frame_polars)
-# Закрыть файл
+# Close the file
 file.close()
-# Создание Native файла из DataFrame
-write = nt.open("examples/test_write.native.gz", "wb", write_compressed=True) # Создаваемый файл будет упакован в архив
-# Создать Native файл из polars.DataFrame
+# Create a Native file from the DataFrame
+write = nt.open("examples/test_write.native.gz", "wb", write_compressed=True) # The created file will be compressed in an archive
+# Create a Native file from polars.DataFrame
 nt.make(frame_polars, write)
-# Закрыть файл
+# Close the file
 write.close()
-# Можно еще раз открыть только записанный файл в режиме чтения
+# You can open the just written file again in read mode
 file = nt.open("examples/test_write.native.gz")
-# И допустим прочитать информацию о файле
+# And let's say read information about the file
 print(nt.info(file))
-# И допустим еще раз распаковать датафрейм чтобы посмотреть что данные совпадают
+# And let's say unpack the DataFrame again to see that the data matches
 print(nt.extract(file))
