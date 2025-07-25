@@ -10,7 +10,15 @@ from ..lens import (
 )
 
 
-def read_string(file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int, str, None,],) -> str:
+def read_string(
+    file: BufferedIOBase,
+    lens: Optional[int] = None,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> str:
     """Read string from Native Format."""
 
     if not lens:
@@ -22,7 +30,16 @@ def read_string(file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int,
     return file.read(lens).decode("utf-8")
 
 
-def write_string(string: str, file: BufferedIOBase, lens: Optional[int] = None, *_: Union[int, str, None,],) -> None:
+def write_string(
+    string: str,
+    file: BufferedIOBase,
+    lens: Optional[int] = None,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> None:
     """Write string into Native Format."""
 
     byte_str: bytes = string.encode("utf-8")

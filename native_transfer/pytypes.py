@@ -61,68 +61,78 @@ PYTYPES: Dict[Tuple[type, int], str] = {
 }
 
 TZONES: Dict[str, str] = {
-    '+0000': 'UTC',
-    '+0100': 'Europe/Amsterdam',
-    '+0200': 'Europe/Kaliningrad',
-    '+0300': 'Europe/Moscow',
-    '+0330': 'Asia/Tehran',
-    '+0400': 'Europe/Samara',
-    '+0430': 'Asia/Kabul',
-    '+0500': 'Asia/Yekaterinburg',
-    '+0530': 'Asia/Colombo',
-    '+0545': 'Asia/Katmandu',
-    '+0600': 'Asia/Omsk',
-    '+0630': 'Asia/Yangon',
-    '+0700': 'Asia/Krasnoyarsk',
-    '+0800': 'Asia/Irkutsk',
-    '+0845': 'Australia/Eucla',
-    '+0900': 'Asia/Yakutsk',
-    '+0930': 'Australia/Darwin',
-    '+1000': 'Asia/Vladivostok',
-    '+1030': 'Australia/Yancowinna',
-    '+1100': 'Asia/Magadan',
-    '+1200': 'Asia/Kamchatka',
-    '+1300': 'Pacific/Enderbury',
-    '+1345': 'Pacific/Chatham',
-    '+1400': 'Pacific/Kiritimati',
-    '-0100': 'Atlantic/Azores',
-    '-0200': 'America/Noronha',
-    '-0300': 'America/Araguaina',
-    '-0400': 'America/Antigua',
-    '-0430': 'Canada/Newfoundland',
-    '-0500': 'America/Panama',
-    '-0600': 'America/Chicago',
-    '-0700': 'America/Boise',
-    '-0800': 'America/Tijuana',
-    '-0900': 'America/Anchorage',
-    '-1000': 'America/Adak',
-    '-1030': 'Pacific/Marquesas',
-    '-1100': 'Pacific/Samoa',
-    '-1200': 'Etc/GMT+12',
+    "+0000": "UTC",
+    "+0100": "Europe/Amsterdam",
+    "+0200": "Europe/Kaliningrad",
+    "+0300": "Europe/Moscow",
+    "+0330": "Asia/Tehran",
+    "+0400": "Europe/Samara",
+    "+0430": "Asia/Kabul",
+    "+0500": "Asia/Yekaterinburg",
+    "+0530": "Asia/Colombo",
+    "+0545": "Asia/Katmandu",
+    "+0600": "Asia/Omsk",
+    "+0630": "Asia/Yangon",
+    "+0700": "Asia/Krasnoyarsk",
+    "+0800": "Asia/Irkutsk",
+    "+0845": "Australia/Eucla",
+    "+0900": "Asia/Yakutsk",
+    "+0930": "Australia/Darwin",
+    "+1000": "Asia/Vladivostok",
+    "+1030": "Australia/Yancowinna",
+    "+1100": "Asia/Magadan",
+    "+1200": "Asia/Kamchatka",
+    "+1300": "Pacific/Enderbury",
+    "+1345": "Pacific/Chatham",
+    "+1400": "Pacific/Kiritimati",
+    "-0100": "Atlantic/Azores",
+    "-0200": "America/Noronha",
+    "-0300": "America/Araguaina",
+    "-0400": "America/Antigua",
+    "-0430": "Canada/Newfoundland",
+    "-0500": "America/Panama",
+    "-0600": "America/Chicago",
+    "-0700": "America/Boise",
+    "-0800": "America/Tijuana",
+    "-0900": "America/Anchorage",
+    "-1000": "America/Adak",
+    "-1030": "Pacific/Marquesas",
+    "-1100": "Pacific/Samoa",
+    "-1200": "Etc/GMT+12",
 }
 
 
-def make_dtype(min_val: Any,
-               max_val: Any,
-               is_fixed: bool,
-               is_nullable: bool,) -> str:
+def make_dtype(
+    min_val: Any,
+    max_val: Any,
+    is_fixed: bool,
+    is_nullable: bool,
+) -> str:
     """Create DType string."""
     if is_nullable:
         return f"Nullable({make_dtype(min_val, max_val, is_fixed, False)})"
     elif isinstance(max_val, Enum):
-        values: str = ", ".join(f"'{i.name}' = {i.value}" for i in max_val.__class__)
+        values: str = ", ".join(
+            f"'{i.name}' = {i.value}" for i in max_val.__class__
+        )
         if -128 <= min_val and max_val <= 127:
             return f"Enum8({values})"
         return f"Enum16({values})"
     elif isinstance(max_val, str) and is_fixed:
         return f"{PYTYPES[(str, is_fixed)]}({len(max_val)})"
     elif isinstance(max_val, float):
-        if 1.401298464324817e-45 <= min_val and max_val <= 3.4028234663852886e+38:
+        if (
+            1.401298464324817e-45 <= min_val
+            and max_val <= 3.4028234663852886e38
+        ):
             return PYTYPES[(float, 0)]
         return PYTYPES[(float, 1)]
     elif isinstance(max_val, datetime):
-        if (datetime(1970, 1, 1, tzinfo=timezone.utc) <= min_val.astimezone(timezone.utc)
-            and max_val.astimezone(timezone.utc) <= datetime(2106, 2, 7, 6, 28, 15, tzinfo=timezone.utc)):
+        if datetime(1970, 1, 1, tzinfo=timezone.utc) <= min_val.astimezone(
+            timezone.utc
+        ) and max_val.astimezone(timezone.utc) <= datetime(
+            2106, 2, 7, 6, 28, 15, tzinfo=timezone.utc
+        ):
             return PYTYPES[(datetime, 0)]
         zone: str = TZONES.get(max_val.strftime("%z"), "UTC")
         return f"{PYTYPES[(datetime, 1)]}(3, '{zone}')"
@@ -151,9 +161,15 @@ def make_dtype(min_val: Any,
                 val = 7
             if -2147483648 <= min_val and 2147483647 <= max_val:
                 val = 8
-            if -9223372036854775808 <= min_val and 9223372036854775807 <= max_val:
+            if (
+                -9223372036854775808 <= min_val
+                and 9223372036854775807 <= max_val
+            ):
                 val = 9
-            if -170141183460469231731687303715884105728 <= min_val and 170141183460469231731687303715884105727 <= max_val:
+            if (
+                -170141183460469231731687303715884105728 <= min_val
+                and 170141183460469231731687303715884105727 <= max_val
+            ):
                 val = 10
             else:
                 val = 11
@@ -193,16 +209,22 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
                     is_nullable = True
 
         if isinstance(min_val, str) and len(min_val) == len(max_val):
-            is_fixed: bool = frame.filter(col(column).is_not_null()).select(
-                (col(column).str.len_chars() == len(max_val)).all()
-            ).item()
+            is_fixed: bool = (
+                frame.filter(col(column).is_not_null())
+                .select((col(column).str.len_chars() == len(max_val)).all())
+                .item()
+            )
 
         if isinstance(min_val, list) or isinstance(max_val, list):
             values: List[Any] = sum(frame[column].to_list(), [])
             is_nullable = None in values
-            min_val, *_, max_val = sorted(value for value in values if value is not None)
+            min_val, *_, max_val = sorted(
+                value for value in values if value is not None
+            )
             del values
-            dtypes.append(f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})")
+            dtypes.append(
+                f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})"
+            )
             continue
 
         dtypes.append(make_dtype(min_val, max_val, is_fixed, is_nullable))
@@ -243,13 +265,17 @@ def dtype_from_pandas(frame: PdFrame) -> List[str]:
         elif isinstance(min_val, generic) or isinstance(max_val, generic):
             min_val = min_val.item()
             max_val = max_val.item()
-        
+
         if isinstance(min_val, list) or isinstance(max_val, list):
             values: List[Any] = sum(frame[column].dropna().to_list(), [])
             is_nullable = None in values
-            min_val, *_, max_val = sorted(value for value in values if value is not None)
+            min_val, *_, max_val = sorted(
+                value for value in values if value is not None
+            )
             del values
-            dtypes.append(f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})")
+            dtypes.append(
+                f"Array({make_dtype(min_val, max_val, is_fixed, is_nullable)})"
+            )
             continue
 
         dtypes.append(make_dtype(min_val, max_val, is_fixed, is_nullable))
@@ -261,6 +287,7 @@ SELECT_FRAME: Dict[type, object] = {
     PdFrame: dtype_from_pandas,
     PlFrame: dtype_from_polars,
 }
+
 
 def dtype_from_frame(frame: Union[PdFrame, PlFrame]) -> List[str]:
     """Auto determine ClickHouse data types."""

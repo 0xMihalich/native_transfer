@@ -49,7 +49,7 @@ UInt8   (1 byte)   — [0 : 255]
 UInt16  (2 bytes)  — [0 : 65535]
 UInt32  (4 bytes)  — [0 : 4294967295]
 UInt64  (8 bytes)  — [0 : 18446744073709551615]
-UInt128 (16 bytes)  — [0 : 340282366920938463463374607431768211455]
+UInt128 (16 bytes) — [0 : 340282366920938463463374607431768211455]
 UInt256 (32 bytes) — [0 : 115792089237316195423570985008687907853269984665640564039457584007913129639935]
 5. Read all elements as a dictionary: key = index starting from 0, value = element.
 The first element always writes the default value for the specified data type.
@@ -58,16 +58,30 @@ but the element with index 0 corresponds to None, and the element with index 1 c
 6. Read the total number of elements in the block as UInt64 (8 bytes). This parameter corresponds to the number of rows in the header.
 7. Read the index of each element according to the size obtained in point 4 and relate it to the value in the dictionary.
 I see no point in packing all this back, so this class will be intended only for reading from Native Format.
-"""
+"""  # noqa: E501
 
-LCType = TypeVar('LCType', str, date, datetime, int, float, None,)
+LCType = TypeVar(
+    "LCType",
+    str,
+    date,
+    datetime,
+    int,
+    float,
+    None,
+)
 
 
 class LowCardinality:
-    """Class for unpacking data from the LowCardinality block into a regular Data Type
-       (String, FixedString, Date, DateTime, and numbers excepting Decimal)."""
-    
-    def __init__(self: "LowCardinality", raw_string: str, total_rows: Optional[int],) -> None:
+    """Class for unpacking data from
+    the LowCardinality block into a regular
+    Data Type (String, FixedString, Date, DateTime,
+    and numbers excepting Decimal)."""
+
+    def __init__(
+        self: "LowCardinality",
+        raw_string: str,
+        total_rows: Optional[int],
+    ) -> None:
         """Class initialization."""
 
         pattern: str = r"^(\w+)(?:\((.*?)\))?$"
@@ -82,7 +96,9 @@ class LowCardinality:
         else:
             self.nullable: bool = False
 
-        self.name: str = match.group(1)  # String, FixedString, Date, DateTime, and numbers excepting Decimal
+        self.name: str = match.group(
+            1
+        )  # String, FixedString, Date, DateTime, and numbers excepting Decimal
         self.dtype: LCType = None
         self.read_func: Optional[object] = None
         self.lens: Optional[int] = None
@@ -160,7 +176,10 @@ class LowCardinality:
         """Read items from LowCardinality block."""
 
         count_elements, index_lens = self._read_values(file)
-        elements: List[LCType] = [self.read_func(file, self.lens, self.tzinfo) for _ in range(count_elements)]
+        elements: List[LCType] = [
+            self.read_func(file, self.lens, self.tzinfo)
+            for _ in range(count_elements)
+        ]
 
         if self.nullable:
             elements[0] = None  # add null element
@@ -169,14 +188,23 @@ class LowCardinality:
         del count_elements, elements  # clear memory
         total_count: int = read_uint(file, 8)
 
-        return [map_elements[read_uint(file, index_lens)] for _ in range(total_count)]
+        return [
+            map_elements[read_uint(file, index_lens)]
+            for _ in range(total_count)
+        ]
 
-    def write(self: "LowCardinality", *_: Union[List[Any], BufferedIOBase]) -> NoReturn:
+    def write(
+        self: "LowCardinality", *_: Union[List[Any], BufferedIOBase]
+    ) -> NoReturn:
         """Write functions don't support."""
 
         raise NativeDTypeError("Write to LowCardinality don't support.")
 
-    def skip(self: "LowCardinality", file: BufferedIOBase, _: Optional[int] = None,) -> None:
+    def skip(
+        self: "LowCardinality",
+        file: BufferedIOBase,
+        _: Optional[int] = None,
+    ) -> None:
         """Skip LowCardinality block."""
 
         count_elements, index_lens = self._read_values(file)

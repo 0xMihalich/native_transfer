@@ -37,13 +37,29 @@ class NativeDateTimeError(ValueError):
     """DateTime/DateTime64 error."""
 
 
-def any_error(any: Any, *_: Union[int, str, None,],) -> NoReturn:
+def any_error(
+    any: Any,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> NoReturn:
     """Any error raise error function."""
 
-    raise NativeError(f"Unknown error {any}.")
+    msg = f"Unknown error {any}."
+    raise NativeError(msg)
 
 
-def dtype_error(dtype: Any, *_: Union[int, str, None,],) -> NoReturn:
+def dtype_error(
+    dtype: Any,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> NoReturn:
     """Data Type raise error function."""
 
-    raise NativeDTypeError(f"Unsupported operation for Data Type {type(dtype)}.")
+    msg = f"Unsupported operation for Data Type {type(dtype)}."
+    raise NativeDTypeError(msg)

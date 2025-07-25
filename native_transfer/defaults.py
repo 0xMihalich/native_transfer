@@ -4,10 +4,7 @@ from datetime import (
     timezone,
 )
 from enum import Enum
-from ipaddress import (
-    IPv4Address,
-    IPv6Address
-)
+from ipaddress import IPv4Address, IPv6Address
 from typing import (
     Any,
     Dict,
@@ -24,7 +21,7 @@ NILL_VALUES: Dict[type, Any] = {
     Enum: 1,
     bool: False,
     UUID: UUID("00000000-0000-0000-0000-000000000000"),
-    IPv4Address: IPv4Address("0.0.0.0"),
+    IPv4Address: IPv4Address("0.0.0.0"),  # noqa: S104
     IPv6Address: IPv6Address("::"),
 }
 

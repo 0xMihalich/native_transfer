@@ -30,7 +30,12 @@ class Array:
 
         for _ in range(self.total_rows):
             row: int = read_uint(file, 8)
-            self.row_elements.append((self.total_items, row,))
+            self.row_elements.append(
+                (
+                    self.total_items,
+                    row,
+                )
+            )
             self.total_items = row
 
         item_params: Dict[str, Any] = self.item._asdict()
@@ -38,9 +43,11 @@ class Array:
         self.item: DType = DType(**item_params)
         items: List[Any] = self.item.read(file)
 
-        return [items[start: stop] for start, stop in self.row_elements]
+        return [items[start:stop] for start, stop in self.row_elements]
 
-    def write(self: "Array", values: List[List[Any]], file: BufferedIOBase) -> None:
+    def write(
+        self: "Array", values: List[List[Any]], file: BufferedIOBase
+    ) -> None:
         """Write Arrays."""
 
         self.total_rows: int = len(values)
@@ -58,7 +65,11 @@ class Array:
 
         self.item.write(values, file)
 
-    def skip(self: "Array", file: BufferedIOBase, total_count: Optional[int] = None,) -> None:
+    def skip(
+        self: "Array",
+        file: BufferedIOBase,
+        total_count: Optional[int] = None,
+    ) -> None:
         """Skip Arrays block."""
 
         total_rows: int = self.total_rows or total_count

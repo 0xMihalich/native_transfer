@@ -82,7 +82,10 @@ from .uuids import (
 from ..errors import NativeDTypeError
 
 
-def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array, DType, LowCardinality]:
+def get_dtype(
+    raw_string: str,
+    total_rows: Optional[int] = None,
+) -> Union[Array, DType, LowCardinality]:
     """Get DType object to work with specified data type.."""
 
     pattern: str = r"^(\w+)(?:\((.*?)\))?$"
@@ -90,7 +93,7 @@ def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array
 
     if not match:
         raise NativeDTypeError("Invalid type format.")
-    
+
     dtype: str = match.group(1)
 
     # Провести рефактор этого места. Когда-нибудь)
@@ -100,23 +103,52 @@ def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array
     elif dtype == "Bool":
         return DType(dtype, bool, read_bool, write_bool, total_rows, 1)
     elif dtype == "Nullable":
-        return DType(dtype, bool, read_nullable, write_nullable, total_rows, 1, nullables=get_dtype(match.group(2), total_rows))
+        return DType(
+            dtype,
+            bool,
+            read_nullable,
+            write_nullable,
+            total_rows,
+            1,
+            nullables=get_dtype(match.group(2), total_rows),
+        )
     elif dtype == "Nothing":
-        return DType(dtype, type(None), read_nothing, write_nothing, total_rows, 1)
+        return DType(
+            dtype, type(None), read_nothing, write_nothing, total_rows, 1
+        )
     elif dtype == "Date":
         return DType(dtype, date, read_date, write_date, total_rows, 2)
     elif dtype == "Date32":
         return DType(dtype, date, read_date32, write_date32, total_rows, 4)
     elif dtype == "DateTime":
-        return DType(dtype, datetime, read_datetime, write_datetime, total_rows, 4, tzinfo=match.group(2))
+        return DType(
+            dtype,
+            datetime,
+            read_datetime,
+            write_datetime,
+            total_rows,
+            4,
+            tzinfo=match.group(2),
+        )
     elif dtype == "DateTime64":
         args: str = match.group(2)
         precission: int = int(args[0])
         tzinfo: str = args[4:-1]
-        return DType(dtype, datetime, read_datetime64, write_datetime64, total_rows, 8, tzinfo=tzinfo, precission=precission,)
+        return DType(
+            dtype,
+            datetime,
+            read_datetime64,
+            write_datetime64,
+            total_rows,
+            8,
+            tzinfo=tzinfo,
+            precission=precission,
+        )
     elif dtype == "Decimal":
         decimal_params: str = match.group(2)
-        precission, scale = [int(param) for param in decimal_params.split(", ")]
+        precission, scale = [
+            int(param) for param in decimal_params.split(", ")
+        ]
         if 1 <= precission <= 9:
             lens = 4
         elif 10 <= precission <= 18:
@@ -125,14 +157,25 @@ def get_dtype(raw_string: str, total_rows: Optional[int] = None,) -> Union[Array
             lens = 16
         elif 39 <= precission <= 76:
             lens = 32
-        return DType(dtype, float, read_decimal, write_decimal, total_rows, lens, precission=precission, scale=scale,)
+        return DType(
+            dtype,
+            float,
+            read_decimal,
+            write_decimal,
+            total_rows,
+            lens,
+            precission=precission,
+            scale=scale,
+        )
     elif dtype in ("Enum8", "Enum16"):
         enum: Dict[int, str] = parse_enum(raw_string)
         if dtype == "Enum8":
             return DType(dtype, enum, read_enum8, write_enum8, total_rows, 1)
         return DType(dtype, enum, read_enum16, write_enum16, total_rows, 2)
     elif dtype == "BFloat16":
-        return DType(dtype, float, read_bfloat16, write_bfloat16, total_rows, 2)
+        return DType(
+            dtype, float, read_bfloat16, write_bfloat16, total_rows, 2
+        )
     elif dtype == "Float32":
         return DType(dtype, float, read_float32, write_float32, total_rows, 4)
     elif dtype == "Float64":

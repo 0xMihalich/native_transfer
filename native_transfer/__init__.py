@@ -15,6 +15,7 @@ from typing import (
     List,
     Optional,
     Union,
+    TYPE_CHECKING,
 )
 
 from pandas import (
@@ -29,9 +30,6 @@ from polars import (
 
 from .chunks import chunk_frame
 from .dtypes import get_dtype
-from .dtypes.arrays import Array
-from .dtypes.lowcardinality import LowCardinality
-from .dtypes.struct import DType
 from .dtypes.strings import (
     read_string,
     write_string,
@@ -60,6 +58,11 @@ from .lens import (
 from .pytypes import dtype_from_frame
 from .readme import readme
 
+if TYPE_CHECKING:
+    from .dtypes.struct import DType
+    from .dtypes.lowcardinality import LowCardinality
+    from .dtypes.arrays import Array
+
 
 __all__ = (
     "DataFormat",
@@ -84,20 +87,24 @@ class NativeTransfer:
 
     __version__ = __version__
 
-    def __init__(self: "NativeTransfer",
-                 block_rows: int = 65_400,
-                 logs: Logger = getLogger(__name__)) -> None:
+    def __init__(
+        self: "NativeTransfer",
+        block_rows: int = 65_400,
+        logs: Logger = getLogger(__name__),
+    ) -> None:
         """Class initialization."""
 
         if not isinstance(block_rows, int):
             raise NativeError("block_rows must be integer.")
-        elif not 0 < block_rows and block_rows <= 1_048_576:
+        if not 0 < block_rows and block_rows <= 1_048_576:
             raise NativeError("block_rows must be in range [1:1048576].")
 
         self.block_rows: int = block_rows
         self.logs: Logger = logs
 
-        self.logs.info(f"NativeTransfer initialized with {self.block_rows} block rows.")
+        self.logs.info(
+            f"NativeTransfer initialized with {self.block_rows} block rows."
+        )
 
     def __str__(self: "NativeTransfer") -> str:
         """String representation of class."""
@@ -113,9 +120,11 @@ class NativeTransfer:
 
         return self.__str__()
 
-    def extract_block(self: "NativeTransfer",
-                      file: Union[BufferedIOBase, GzipFile],
-                      frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
+    def extract_block(
+        self: "NativeTransfer",
+        file: Union[BufferedIOBase, GzipFile],
+        frame_type: FrameType = FrameType.Pandas,
+    ) -> Union[PdFrame, PlFrame]:
         """Read one block from Native Format to polars/pandas DataFrame."""
 
         try:
@@ -126,7 +135,9 @@ class NativeTransfer:
             for _ in range(num_columns):
                 name: str = read_string(file)
                 raw_string: str = read_string(file)
-                block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, total_rows)
+                block: Union[Array, DType, LowCardinality] = get_dtype(
+                    raw_string, total_rows
+                )
 
                 if frame_type == FrameType.Pandas:
                     frames.append(PdSeries(data=block.read(file), name=name))
@@ -143,14 +154,18 @@ class NativeTransfer:
             self.logs.error(err)
             raise NativeReadError(err)
 
-    def extract(self: "NativeTransfer",
-                file: Union[BufferedIOBase, GzipFile],
-                frame_type: FrameType = FrameType.Pandas,) -> Union[PdFrame, PlFrame]:
+    def extract(
+        self: "NativeTransfer",
+        file: Union[BufferedIOBase, GzipFile],
+        frame_type: FrameType = FrameType.Pandas,
+    ) -> Union[PdFrame, PlFrame]:
         """Read Native Format file to polars/pandas DataFrame."""
 
         file.seek(0)
         data_frames: List[Union[PdFrame, PlFrame]] = []
-        self.logs.info(f"Read DataFrame from Native File {file.name} operation started.")
+        self.logs.info(
+            f"Read DataFrame from Native File {file.name} operation started."
+        )
 
         while True:
             try:
@@ -158,32 +173,48 @@ class NativeTransfer:
             except EOF:
                 break
 
-        self.logs.info(f"Read DataFrame from Native File {file.name} operation success.")
+        self.logs.info(
+            f"Read DataFrame from Native File {file.name} operation success."
+        )
 
         if frame_type == FrameType.Pandas:
             return pd_concat(data_frames, ignore_index=True)
         elif frame_type == FrameType.Polars:
             return pl_concat(data_frames, how="vertical")
 
-    def make(self: "NativeTransfer",
-             frame: Union[PdFrame, PlFrame],
-             file: Union[BufferedIOBase, GzipFile],
-             columns: Optional[List[str]] = None,
-             dtypes: Optional[List[str]] = None,) -> None:
+    def make(
+        self: "NativeTransfer",
+        frame: Union[PdFrame, PlFrame],
+        file: Union[BufferedIOBase, GzipFile],
+        columns: Optional[List[str]] = None,
+        dtypes: Optional[List[str]] = None,
+    ) -> None:
         """Make Native Format from polars/pandas DataFrame."""
 
         try:
-            self.logs.info(f"Create native file {file.name} from DataFrame started.")
+            self.logs.info(
+                f"Create native file {file.name} from DataFrame started."
+            )
             if not columns:
-                self.logs.warning("No columns found. Get column names from DataFrame operation started.")
+                self.logs.warning(
+                    "No columns found. Get column names "
+                    "from DataFrame operation started."
+                )
                 columns: List[str] = list(frame.columns)
-                self.logs.warning("Get column names from DataFrame operation success.")
+                self.logs.warning(
+                    "Get column names from DataFrame operation success."
+                )
             self.logs.info(f"Columns for write: {columns}")
 
             if not dtypes:
-                self.logs.warning("No data types found. Get data types from DataFrame operation started.")
+                self.logs.warning(
+                    "No data types found. Get data types "
+                    "from DataFrame operation started."
+                )
                 dtypes: List[str] = dtype_from_frame(frame)
-                self.logs.warning("Get data types from DataFrame operation success.")
+                self.logs.warning(
+                    "Get data types from DataFrame operation success."
+                )
             self.logs.info(f"Data Types for write: {dtypes}")
 
             block_rows: int = self.block_rows
@@ -197,20 +228,34 @@ class NativeTransfer:
                     raw_string: str = dtypes[idx]
                     write_string(columns[idx], file)
                     write_string(raw_string, file)
-                    block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, total_rows)
+                    block: Union[Array, DType, LowCardinality] = get_dtype(
+                        raw_string, total_rows
+                    )
                     block.write(df[column].to_list(), file)
                     del block
 
                 del df
-            self.logs.info(f"Create native file {file.name} from DataFrame success.")
+            self.logs.info(
+                f"Create native file {file.name} from DataFrame success."
+            )
         except Exception as err:
             self.logs.error(err)
             raise NativeWriteError(err)
 
     @staticmethod
-    def open(file: Union[str, PathLike, bytes, BytesIO, BufferedIOBase, BufferedWriter, GzipFile],
-             mode: str = "rb",
-             write_compressed: bool = False,) -> Union[BufferedIOBase, GzipFile]:
+    def open(
+        file: Union[
+            str,
+            PathLike,
+            bytes,
+            BytesIO,
+            BufferedIOBase,
+            BufferedWriter,
+            GzipFile,
+        ],
+        mode: str = "rb",
+        write_compressed: bool = False,
+    ) -> Union[BufferedIOBase, GzipFile]:
         """Open file for read/write."""
 
         if isinstance(file, GzipFile):
@@ -220,7 +265,9 @@ class NativeTransfer:
             file = open(file, mode)
         elif isinstance(file, bytes):
             file = BytesIO(bytes)
-        elif isinstance(file, Union[BufferedIOBase, BufferedReader, BufferedWriter]):
+        elif isinstance(
+            file, Union[BufferedIOBase, BufferedReader, BufferedWriter]
+        ):
             file.seek(0)
         else:
             raise NativeError("Unsupported file type.")
@@ -238,7 +285,16 @@ class NativeTransfer:
         return file
 
     @staticmethod
-    def info(file: Union[BufferedIOBase, BufferedReader, BufferedWriter, GzipFile, PdFrame, PlFrame]) -> DataInfo:
+    def info(
+        file: Union[
+            BufferedIOBase,
+            BufferedReader,
+            BufferedWriter,
+            GzipFile,
+            PdFrame,
+            PlFrame,
+        ],
+    ) -> DataInfo:
         """Get info for input data."""
 
         data_value: Optional[int] = FORMAT_VALUES.get(file.__class__)
@@ -272,7 +328,9 @@ class NativeTransfer:
                         columns.append(name)
                         dtypes.append(raw_string)
 
-                    block: Union[Array, DType, LowCardinality] = get_dtype(raw_string, _total_rows)
+                    block: Union[Array, DType, LowCardinality] = get_dtype(
+                        raw_string, _total_rows
+                    )
                     block.skip(file, _total_rows)
 
                 total_rows += _total_rows

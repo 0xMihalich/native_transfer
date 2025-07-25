@@ -7,7 +7,8 @@ logging.basicConfig()
 logger = logging.getLogger("NativeTransfer")
 logger.setLevel(logging.INFO)
 # Two optional parameters:
-# block_rows - the maximum number of rows from the DataFrame to write in one block.
+# block_rows - the maximum number of rows
+# from the DataFrame to write in one block.
 # logs - pass an instance of the logger for logging events.
 nt = NativeTransfer(block_rows=65_400, logs=logger)
 print(nt)
@@ -34,7 +35,11 @@ print(frame_polars)
 # Close the file
 file.close()
 # Create a Native file from the DataFrame
-write = nt.open("examples/test_write.native.gz", "wb", write_compressed=True) # The created file will be compressed in an archive
+write = nt.open(
+    "examples/test_write.native.gz",
+    "wb",
+    write_compressed=True
+) # The created file will be compressed in an archive
 # Create a Native file from polars.DataFrame
 nt.make(frame_polars, write)
 # Close the file

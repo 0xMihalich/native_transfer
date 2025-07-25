@@ -21,25 +21,59 @@ INTEGER_LENS: Dict[str, int] = {
 }
 
 
-def read_int(file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> int:
+def read_int(
+    file: BufferedIOBase,
+    lens: int,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> int:
     """Read signed integer from Native Format."""
 
     return int.from_bytes(file.read(lens), "little", signed=True)
 
 
-def write_int(num: int, file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> None:
+def write_int(
+    num: int,
+    file: BufferedIOBase,
+    lens: int,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> None:
     """Write signed integer into Native Format."""
 
     file.write(num.to_bytes(lens, "little", signed=True))
 
 
-def read_uint(file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> int:
+def read_uint(
+    file: BufferedIOBase,
+    lens: int,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> int:
     """Read unsigned integer from Native Format."""
 
     return int.from_bytes(file.read(lens), "little", signed=False)
 
 
-def write_uint(num: int, file: BufferedIOBase, lens: int, *_: Union[int, str, None,],) -> None:
+def write_uint(
+    num: int,
+    file: BufferedIOBase,
+    lens: int,
+    *_: Union[
+        int,
+        str,
+        None,
+    ],
+) -> None:
     """Write unsigned integer into Native Format."""
 
     file.write(num.to_bytes(lens, "little", signed=False))

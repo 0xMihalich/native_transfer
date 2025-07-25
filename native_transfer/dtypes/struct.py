@@ -42,7 +42,9 @@ class DType(NamedTuple):
 
         if not isinstance(value, self.dtype):
             if value is not None:
-                raise NativeDTypeError(f"DType {type(value)} not match with {self.dtype}.")
+                raise NativeDTypeError(
+                    f"DType {type(value)} not match with {self.dtype}."
+                )
 
         self.write_func(
             null_correction(value, self.dtype),
@@ -61,7 +63,9 @@ class DType(NamedTuple):
             return []
 
         if self.nullables:
-            not_empty: List[bool] = [self._read(file) for _ in range(self.total_rows)]
+            not_empty: List[bool] = [
+                self._read(file) for _ in range(self.total_rows)
+            ]
 
             def read_nullable(num) -> Any | None:
                 value: Any = self.nullables._read(file)
@@ -80,18 +84,22 @@ class DType(NamedTuple):
             return
 
         if self.nullables:
+
             def write_nullable(value) -> bool:
                 if value is None:
                     return False
                 return True
+
             [self._write(write_nullable(value), file) for value in values]
             [self.nullables._write(value, file) for value in values]
         else:
             [self._write(value, file) for value in values]
 
-    def skip(self: "DType",
-             file: BufferedIOBase,
-             total_count: Optional[int] = None,) -> None:
+    def skip(
+        self: "DType",
+        file: BufferedIOBase,
+        total_count: Optional[int] = None,
+    ) -> None:
         """Skip block."""
 
         total_rows: int = self.total_rows or total_count
