@@ -14,6 +14,8 @@ from gzip import GzipFile
 from pandas import DataFrame as PdFrame
 from polars import DataFrame as PlFrame
 
+from .compress import NativeCompressFile
+
 
 FORMAT_VALUES: Dict[type, int] = {
     BufferedIOBase: 0,
@@ -22,6 +24,7 @@ FORMAT_VALUES: Dict[type, int] = {
     GzipFile: 1,
     PdFrame: 2,
     PlFrame: 3,
+    NativeCompressFile: 4,
 }
 
 class DataFormat(Enum):
@@ -31,6 +34,7 @@ class DataFormat(Enum):
     GzipNative = 1
     Pandas = 2
     Polars = 3
+    CompressedNative = 4
 
 
 class DataInfo(NamedTuple):

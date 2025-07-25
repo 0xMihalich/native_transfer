@@ -1,3 +1,6 @@
 backports.zoneinfo==0.2.1;python_version<"3.9"
+clickhouse-cityhash>=1.0.2.4
+lz4>=4.4.4
+zstd>=1.5.7.2
 pandas
 polars

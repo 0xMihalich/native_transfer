@@ -1,5 +1,10 @@
 # Version History
 
+## 0.0.4
+
+* Refactor with Ruff linter
+* Add compression support
+
 ## 0.0.3
 
 * Repository status changed to public

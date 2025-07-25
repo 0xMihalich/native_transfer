@@ -29,6 +29,19 @@ from polars import (
 )
 
 from .chunks import chunk_frame
+from .compress import (
+    BlockStruct,
+    CompressCodec,
+    CompressionMethod,
+    FileBlocks,
+    NativeCompressError,
+    NativeCompressExtractError,
+    NativeCompressFile,
+    NativeCompressFileError,
+    NativeCompressFormatNotSupport,
+    NativeCompressMethodNotSupport,
+    NativeCompressPackError,
+)
 from .dtypes import get_dtype
 from .dtypes.strings import (
     read_string,
@@ -65,21 +78,32 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    "BlockStruct",
+    "CompressCodec",
+    "CompressionMethod",
     "DataFormat",
     "DataInfo",
+    "FileBlocks",
     "FrameType",
-    "NativeTransfer",
+    "NativeCompressError",
+    "NativeCompressExtractError",
+    "NativeCompressFile",
+    "NativeCompressFileError",
+    "NativeCompressFormatNotSupport",
+    "NativeCompressMethodNotSupport",
+    "NativeCompressPackError",
+    "NativeDTypeError",
     "NativeDateError",
     "NativeDateTimeError",
-    "NativeDTypeError",
-    "NativeError",
     "NativeEnumError",
+    "NativeError",
     "NativePrecissionError",
     "NativeReadError",
+    "NativeTransfer",
     "NativeWriteError",
 )
 __doc__ = readme
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 
 class NativeTransfer:
@@ -91,6 +115,9 @@ class NativeTransfer:
         self: "NativeTransfer",
         block_rows: int = 65_400,
         logs: Logger = getLogger(__name__),
+        make_compress: bool = False,
+        compress_method: CompressionMethod = CompressionMethod.NONE,
+        compress_level: int = 0,
     ) -> None:
         """Class initialization."""
 
@@ -99,8 +126,13 @@ class NativeTransfer:
         if not 0 < block_rows and block_rows <= 1_048_576:
             raise NativeError("block_rows must be in range [1:1048576].")
 
-        self.block_rows: int = block_rows
-        self.logs: Logger = logs
+        self.block_rows = block_rows
+        self.make_compress = make_compress
+        self.codec = CompressCodec(
+            default_method=compress_method,
+            default_level=compress_level,
+        )
+        self.logs = logs
 
         self.logs.info(
             f"NativeTransfer initialized with {self.block_rows} block rows."
@@ -120,9 +152,25 @@ class NativeTransfer:
 
         return self.__str__()
 
-    def extract_block(
+    def check_compress(
         self: "NativeTransfer",
         file: Union[BufferedIOBase, GzipFile],
+    ) -> Union[BufferedIOBase, GzipFile, NativeCompressFile]:
+        """Return NativeCompressFile if compressed."""
+
+        try:
+            return NativeCompressFile(
+                file=file,
+                codec=self.codec,
+                logs=self.logs,
+            )
+        except ValueError:
+            """Not a compressed file."""
+            return file
+
+    def extract_block(
+        self: "NativeTransfer",
+        file: Union[BufferedIOBase, GzipFile, NativeCompressFile],
         frame_type: FrameType = FrameType.Pandas,
     ) -> Union[PdFrame, PlFrame]:
         """Read one block from Native Format to polars/pandas DataFrame."""
@@ -162,6 +210,7 @@ class NativeTransfer:
         """Read Native Format file to polars/pandas DataFrame."""
 
         file.seek(0)
+        base_file = self.check_compress(file)
         data_frames: List[Union[PdFrame, PlFrame]] = []
         self.logs.info(
             f"Read DataFrame from Native File {file.name} operation started."
@@ -169,7 +218,7 @@ class NativeTransfer:
 
         while True:
             try:
-                data_frames.append(self.extract_block(file, frame_type))
+                data_frames.append(self.extract_block(base_file, frame_type))
             except EOF:
                 break
 
@@ -190,6 +239,15 @@ class NativeTransfer:
         dtypes: Optional[List[str]] = None,
     ) -> None:
         """Make Native Format from polars/pandas DataFrame."""
+
+        if self.make_compress:
+            file = NativeCompressFile(
+                file=file,
+                codec=self.codec,
+                logs=self.logs,
+            )
+
+        buffer = BytesIO()
 
         try:
             self.logs.info(
@@ -221,18 +279,21 @@ class NativeTransfer:
 
             for df in chunk_frame(frame, block_rows):
                 total_rows: int = len(df)
-                write_lens(len(columns), file)
-                write_lens(total_rows, file)
+                write_lens(len(columns), buffer)
+                write_lens(total_rows, buffer)
 
                 for idx, column in enumerate(df.columns):
                     raw_string: str = dtypes[idx]
-                    write_string(columns[idx], file)
-                    write_string(raw_string, file)
+                    write_string(columns[idx], buffer)
+                    write_string(raw_string, buffer)
                     block: Union[Array, DType, LowCardinality] = get_dtype(
                         raw_string, total_rows
                     )
-                    block.write(df[column].to_list(), file)
+                    block.write(df[column].to_list(), buffer)
                     del block
+                    file.write(buffer.getvalue())
+                    file.flush()
+                    buffer = BytesIO()
 
                 del df
             self.logs.info(
@@ -284,8 +345,8 @@ class NativeTransfer:
 
         return file
 
-    @staticmethod
     def info(
+        self,
         file: Union[
             BufferedIOBase,
             BufferedReader,
@@ -297,15 +358,16 @@ class NativeTransfer:
     ) -> DataInfo:
         """Get info for input data."""
 
-        data_value: Optional[int] = FORMAT_VALUES.get(file.__class__)
+        base_file = self.check_compress(file)
+        data_value: Optional[int] = FORMAT_VALUES.get(base_file.__class__)
 
         if data_value is None:
             raise NativeError("Unsupported Data Format.")
 
         if data_value in (2, 3):
-            columns: List[str] = list(file.columns)
-            dtypes: List[str] = dtype_from_frame(file)
-            total_rows: int = len(file)
+            columns: List[str] = list(base_file.columns)
+            dtypes: List[str] = dtype_from_frame(base_file)
+            total_rows: int = len(base_file)
 
             return get_info(data_value, columns, dtypes, total_rows)
 
@@ -313,16 +375,16 @@ class NativeTransfer:
         dtypes: List[str] = []
         total_rows: int = 0
 
-        file.seek(0)
+        base_file.seek(0)
 
         while True:
             try:
-                num_columns: int = read_lens(file)
-                _total_rows: int = read_lens(file)
+                num_columns: int = read_lens(base_file)
+                _total_rows: int = read_lens(base_file)
 
                 for _ in range(num_columns):
-                    name: str = read_string(file)
-                    raw_string: str = read_string(file)
+                    name: str = read_string(base_file)
+                    raw_string: str = read_string(base_file)
 
                     if total_rows == 0:
                         columns.append(name)
@@ -331,10 +393,18 @@ class NativeTransfer:
                     block: Union[Array, DType, LowCardinality] = get_dtype(
                         raw_string, _total_rows
                     )
-                    block.skip(file, _total_rows)
+                    block.skip(base_file, _total_rows)
 
                 total_rows += _total_rows
             except EOF:
                 break
+
+        if isinstance(base_file, NativeCompressFile):
+            return f"""{get_info(data_value, columns, dtypes, total_rows)}
+
+Compressed info:
+────────────────
+{base_file.file_blocks}
+"""
 
         return get_info(data_value, columns, dtypes, total_rows)
