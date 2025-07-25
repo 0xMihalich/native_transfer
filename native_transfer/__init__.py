@@ -291,10 +291,9 @@ class NativeTransfer:
                     )
                     block.write(df[column].to_list(), buffer)
                     del block
-                    file.write(buffer.getvalue())
-                    file.flush()
-                    buffer = BytesIO()
 
+                file.write(buffer.getvalue())
+                buffer = BytesIO()
                 del df
             self.logs.info(
                 f"Create native file {file.name} from DataFrame success."
