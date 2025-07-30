@@ -4,6 +4,7 @@
 
 * Refactor with Ruff linter
 * Add compression support
+* Fixed error when writing Nullable(FixedString(N))
 
 ## 0.0.3
 
