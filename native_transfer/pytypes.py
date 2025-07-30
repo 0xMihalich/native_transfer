@@ -208,7 +208,10 @@ def dtype_from_polars(frame: PlFrame) -> List[str]:
                     min_val = max_val = None
                     is_nullable = True
 
-        if isinstance(min_val, str) and len(min_val) == len(max_val):
+        if isinstance(
+            min_val,
+            str,
+        ) and len(min_val) == len(max_val) and len(min_val) > 0:
             is_fixed: bool = (
                 frame.filter(col(column).is_not_null())
                 .select((col(column).str.len_chars() == len(max_val)).all())
@@ -257,7 +260,10 @@ def dtype_from_pandas(frame: PdFrame) -> List[str]:
                     min_val = max_val = None
                     is_nullable = True
 
-        if isinstance(min_val, str) and len(min_val) == len(max_val):
+        if isinstance(
+            min_val,
+            str,
+        ) and len(min_val) == len(max_val) and len(min_val) > 0:
             is_fixed: bool = (frame[column].str.len() == len(max_val)).all()
         elif isinstance(min_val, Timestamp) or isinstance(max_val, Timestamp):
             min_val = min_val.to_pydatetime()

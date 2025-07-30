@@ -42,6 +42,9 @@ def write_string(
 ) -> None:
     """Write string into Native Format."""
 
+    if lens and not string:
+        string = " " * lens
+
     byte_str: bytes = string.encode("utf-8")
 
     if not lens:
