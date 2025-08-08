@@ -166,6 +166,7 @@ class NativeTransfer:
             )
         except ValueError:
             """Not a compressed file."""
+            file.seek(0)
             return file
 
     def extract_block(
@@ -405,5 +406,7 @@ Compressed info:
 ────────────────
 {base_file.file_blocks}
 """
+
+        base_file.seek(0)
 
         return get_info(data_value, columns, dtypes, total_rows)
