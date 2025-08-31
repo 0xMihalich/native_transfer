@@ -158,6 +158,9 @@ class NativeTransfer:
     ) -> Union[BufferedIOBase, GzipFile, NativeCompressFile]:
         """Return NativeCompressFile if compressed."""
 
+        if file.__class__ == GzipFile:
+            return file
+
         try:
             return NativeCompressFile(
                 file=file,
@@ -226,7 +229,8 @@ class NativeTransfer:
         self.logs.info(
             f"Read DataFrame from Native File {file.name} operation success."
         )
-
+        if len(data_frames) == 1:
+            return data_frames[0]
         if frame_type == FrameType.Pandas:
             return pd_concat(data_frames, ignore_index=True)
         elif frame_type == FrameType.Polars:
@@ -358,7 +362,11 @@ class NativeTransfer:
     ) -> DataInfo:
         """Get info for input data."""
 
-        base_file = self.check_compress(file)
+        if file.__class__ in (PdFrame, PlFrame):
+            base_file = file
+        else:
+            base_file = self.check_compress(file)
+
         data_value: Optional[int] = FORMAT_VALUES.get(base_file.__class__)
 
         if data_value is None:
